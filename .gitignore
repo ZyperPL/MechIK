@@ -48,3 +48,4 @@ massif.out
 massif.out.*
 bb.out
 bb.out.*
+build/*
