@@ -18,8 +18,6 @@ out float light;
 void main()
 {
   gl_Position = P * V * M * vec4(position, 1.0);
-  vec4 n1 = P * V * vec4(vertex_normal, 1.0);
-  vec4 n2 = V * vec4(vertex_normal, 1.0);
-  light = dot(n1, n2);
+  light = dot(vertex_normal, normalize(position - gl_Position.xyz));
   uv = vertex_uv;
 }
