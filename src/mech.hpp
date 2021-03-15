@@ -17,6 +17,8 @@ class Mech : public ZD::Entity {
 public:
   Mech(glm::vec3 position);
   void render(ZD::View &view);
+
+  static ZD::ShaderProgram *model_shader;
 private:
   std::unique_ptr<ZD::Entity> body;
   std::vector<std::unique_ptr<LegEntity>> legs;

@@ -2,24 +2,36 @@
 
 #include "ZD/3rd/glm/gtx/rotate_vector.hpp"
 
+ZD::ShaderProgram *Mech::model_shader = nullptr;
+
 class LegEntity
 {
 public:
   LegEntity()
   {
-    const size_t LEG_PAIRS = 1;
+    auto metal_texture = std::make_shared<ZD::Texture>(
+      ZD::Image::load("textures/metal29_diffuse.tga"),
+      ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+
+    const size_t LEG_PAIRS = 2;
     for (size_t i = 0; i < LEG_PAIRS * 2; i++)
     {
       auto leg_entity = std::make_unique<ZD::Entity>();
-      leg_entity->add_model(std::make_shared<ZD::Model>("models/mech_leg_b.obj"));
+      auto mdl = std::make_shared<ZD::Model>("models/mech_leg_b.obj");
+      mdl->add_texture(metal_texture);
+      leg_entity->add_model(mdl);
       legs_b.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
-      leg_entity->add_model(std::make_shared<ZD::Model>("models/mech_leg_m.obj"));
+      mdl = std::make_shared<ZD::Model>("models/mech_leg_m.obj");
+      mdl->add_texture(metal_texture);
+      leg_entity->add_model(mdl);
       legs_m.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
-      leg_entity->add_model(std::make_shared<ZD::Model>("models/mech_leg_e.obj"));
+      mdl = std::make_shared<ZD::Model>("models/mech_leg_e.obj");
+      mdl->add_texture(metal_texture);
+      leg_entity->add_model(mdl);
       legs_e.push_back(std::move(leg_entity));
     }
   }
@@ -35,11 +47,9 @@ public:
     for (size_t i = 0; i < legs_b.size(); ++i)
     {
       glm::vec3 rotation = parent.get_rotation();
-      //rotation.y += M_PI / 2.0 + M_PI / (legs_b.size() * 2.0);
-      //rotation.y += M_PI / 12.0;
-
-      if ((i % 2) == 0)
-        rotation.y = -M_PI - rotation.y;
+      const float ang = (2. * M_PI) / legs_b.size();
+      rotation.y += ang / 2.0;
+      rotation.y += i * ang;
 
       auto &leg_b = legs_b[i];
       auto &leg_m = legs_m[i];
@@ -56,8 +66,6 @@ public:
       leg_b->move_position({ 0.0, -1.2, 0.0 });
       leg_m->move_position({ 0.0, -1.2, 0.0 });
 
-      printf("%f\n", rotation.y);
-
       glm::vec3 m_pos { 1.0, 0.0, 0.0 };
       m_pos = glm::rotate(m_pos, rotation.y, glm::vec3(0.0, 1.0, 0.0));
       leg_m->move_position(m_pos);
@@ -65,7 +73,6 @@ public:
 
       m_pos = glm::vec3(1.0, -1.3, 0.0);
       m_pos += glm::rotate(glm::vec3(1.0, 0.0, 0.0), -r1, { 0.0f, 0.0f, 1.0f });
-      //m_pos += glm::rotate(glm::vec3(0.0, 1.0, 0.0), -r, {0.0f, 0.0f, 1.0f});
       m_pos = glm::rotate(m_pos, rotation.y, glm::vec3(0.0, 1.0, 0.0));
       leg_e->move_position(m_pos);
       leg_e->add_rotation(glm::rotate({ 0.0, 0.0, -r2 }, rotation.y, glm::vec3(0.0, 1.0, 0.0)));
@@ -96,7 +103,11 @@ Mech::Mech(glm::vec3 position)
 : ZD::Entity(position, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 })
 {
   body = std::make_unique<ZD::Entity>();
-  body->add_model(std::make_shared<ZD::Model>("models/mech_body.obj"));
+  auto body_model = std::make_shared<ZD::Model>("models/mech_body.obj");
+  body_model->add_texture(std::make_shared<ZD::Texture>(
+    ZD::Image::load("textures/metal29_specular.tga"),
+    ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR }));
+  body->add_model(body_model);
   body->set_position(position);
 
   legs.push_back(std::make_unique<LegEntity>());
@@ -105,6 +116,8 @@ Mech::Mech(glm::vec3 position)
              .add(ZD::File("shaders/model.vertex.glsl"), GL_VERTEX_SHADER)
              .add(ZD::File("shaders/model.fragment.glsl"), GL_FRAGMENT_SHADER)
              .compile();
+
+  Mech::model_shader = shader.get();
 }
 
 void Mech::render(ZD::View &view)

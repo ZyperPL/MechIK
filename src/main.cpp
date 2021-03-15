@@ -7,6 +7,7 @@
 #include "ZD/Window.hpp"
 
 #include "mech.hpp"
+#include "prop.hpp"
 
 #define WINDOW_WIDTH  1920.0
 #define WINDOW_HEIGHT 1080.0
@@ -31,12 +32,21 @@ inline glm::vec3 camera_up(const glm::vec3 &position, const glm::vec3 &target)
 int main()
 {
   ZD::OGLRenderer renderer;
-  renderer.set_multisampling(16);
+  renderer.set_multisampling(1);
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
   renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
 
   Mech *mech = new Mech { { 5.0, 0.0, 0.0 } };
+  std::vector<Prop> props;
+  for (size_t i = 0; i < 10; i++)
+    for (size_t j = 0; j < 10; j++)
+    {
+      glm::vec3 pos { -40.0, -2.0, -20.0 };
+      pos.x += i * 10.0;
+      pos.z += j * 10.0;
+      props.push_back(Prop { PropType::Tree, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
+    }
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
@@ -78,6 +88,10 @@ int main()
     view.set_position(camera_position);
     view.set_target(mech->get_position());
     mech->render(view);
+    for (auto &&prop : props)
+    {
+      prop.draw(*Mech::model_shader, view);
+    }
 
     renderer.render();
   }
