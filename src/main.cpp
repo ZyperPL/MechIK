@@ -9,6 +9,10 @@
 #include "mech.hpp"
 #include "prop.hpp"
 
+#include "3rd/imgui/imgui.h"
+#include "3rd/imgui/imgui_impl_glfw.h"
+#include "3rd/imgui/imgui_impl_opengl3.h"
+
 #define WINDOW_WIDTH  1920.0
 #define WINDOW_HEIGHT 1080.0
 
@@ -29,6 +33,42 @@ inline glm::vec3 camera_up(const glm::vec3 &position, const glm::vec3 &target)
   return glm::cross(f, r);
 }
 
+void imgui_setup(const ZD::Window_GLFW &window)
+{
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  //io.Fonts->AddFontFromFileTTF("./data/Roboto-Medium.ttf", 16.0f);
+  //io.Fonts->AddFontFromFileTTF("./data/Roboto-Regular.ttf", 16.0f);
+
+  ImGui::StyleColorsDark();
+  ImGui_ImplGlfw_InitForOpenGL(window.get_handle(), true);
+  ImGui_ImplOpenGL3_Init("#version 150");
+}
+
+void imgui_frame()
+{
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+}
+
+void imgui_render()
+{
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void imgui_cleanup()
+{
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+}
+
+
 int main()
 {
   ZD::OGLRenderer renderer;
@@ -37,10 +77,12 @@ int main()
   renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
 
+  imgui_setup(*static_cast<ZD::Window_GLFW*>(window.get()));
+
   Mech *mech = new Mech { { 5.0, 0.0, 0.0 } };
   std::vector<Prop> props;
-  for (size_t i = 0; i < 10; i++)
-    for (size_t j = 0; j < 10; j++)
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 2; j++)
     {
       glm::vec3 pos { -40.0, -2.0, -20.0 };
       pos.x += i * 10.0;
@@ -61,6 +103,11 @@ int main()
   {
     renderer.clear();
     renderer.update();
+    imgui_frame();
+    
+    ImGui::Begin("Test");
+    ImGui::Text("ABCD");
+    ImGui::End();
 
     float CAMERA_STEP_SIZE = 0.01;
     if (window->input()->key(ZD::Key::LeftShift))
@@ -93,9 +140,11 @@ int main()
       prop.draw(*Mech::model_shader, view);
     }
 
+    imgui_render();
     renderer.render();
   }
-
+  
+  imgui_cleanup();
   window->kill();
 
   printf("Done.\n");

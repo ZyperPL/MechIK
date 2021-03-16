@@ -24,7 +24,7 @@ SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -O3 -s -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 add_compile_options(${CMAKE_CXX_FLAGS} -fPIC -std=c++20 -Wall)
 
-FILE(GLOB SOURCES "src/*.cpp" "src/ZD/*.cpp")
+FILE(GLOB SOURCES "src/*.cpp" "src/ZD/*.cpp" "src/3rd/imgui/*.cpp")
 ADD_EXECUTABLE(${NAME} "${SOURCES}")
 TARGET_LINK_LIBRARIES(${NAME} PRIVATE stdc++ GL GLEW glfw pthread)
 
