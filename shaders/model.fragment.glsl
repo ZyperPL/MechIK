@@ -8,5 +8,8 @@ out vec4 fragColor;
 void main()
 {
   fragColor = texture(sampler, uv);
-  fragColor.rgb += vec3(light);
+  fragColor.rgb *= (0.6 + light);
+
+  if (fragColor.a < 0.1)
+    discard;
 }
