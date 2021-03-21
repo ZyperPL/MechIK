@@ -32,8 +32,5 @@ void main()
   fragColor.rgb *= (0.6 + light);
   
   float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
-  fragColor.rgb += noise(uv * 12134.1142) * (noise_value * 2.0);
   fragColor.rgb += noise(uv * 12334.5232) * noise_value;
-  fragColor.rgb += (noise(uv * 62334.1132) * (noise_value * 1.2) * fragColor.rgb);
-  fragColor.rgb += noise(uv * 112334.7132) * (noise_value / 2.0);
 }
