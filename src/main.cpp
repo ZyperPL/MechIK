@@ -69,7 +69,6 @@ void imgui_cleanup()
   ImGui::DestroyContext();
 }
 
-
 int main()
 {
   ZD::OGLRenderer renderer;
@@ -78,7 +77,7 @@ int main()
   //renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
 
-  imgui_setup(*static_cast<ZD::Window_GLFW*>(window.get()));
+  imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
 
   Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
   std::vector<Prop> props;
@@ -107,7 +106,7 @@ int main()
     renderer.clear();
     renderer.update();
     imgui_frame();
-    
+
     ImGui::Begin("Test");
     ImGui::Text("ABCD");
     ImGui::End();
@@ -152,10 +151,20 @@ int main()
     }
     ground->draw(*ground->get_shader_program(), view);
 
+    if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
+    {
+      const glm::vec3 new_pos { camera_position.x,
+                                ground->get_y(camera_position.x, camera_position.z),
+                                camera_position.z };
+      mech->set_position(new_pos);
+      camera_position.x -= 4.0f;
+      camera_position.z -= 4.0f;
+    }
+
     imgui_render();
     renderer.render();
   }
-  
+
   imgui_cleanup();
   window->kill();
 
