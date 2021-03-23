@@ -25,7 +25,7 @@ out vec4 fragColor;
 void main()
 {
   fragColor = texture(sampler, uv);
-  if (fragColor.a < 0.1)
+  if (fragColor.a < 0.5)
     discard;
   
   fragColor += (texture(sampler, uv / (dst_to_camera / 2.0)) / 32.0);

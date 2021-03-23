@@ -80,7 +80,7 @@ int main()
 
   imgui_setup(*static_cast<ZD::Window_GLFW*>(window.get()));
 
-  Mech *mech = new Mech { { 5.0, 0.0, 0.0 } };
+  Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
   std::vector<Prop> props;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
@@ -93,7 +93,7 @@ int main()
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(100.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.1, 100.0)),
+      ZD::Camera::Fov::from_degrees(100.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.01, 1000.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   auto ground = std::make_shared<Ground>();
@@ -150,7 +150,7 @@ int main()
     {
       prop.draw(*Mech::model_shader, view);
     }
-    ground->draw(*Mech::model_shader, view);
+    ground->draw(*ground->get_shader_program(), view);
 
     imgui_render();
     renderer.render();
