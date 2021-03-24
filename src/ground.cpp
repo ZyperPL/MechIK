@@ -12,7 +12,7 @@ Ground::Ground()
 
   auto model = std::make_shared<ZD::Model>();
 
-  const float UNIT = 1.0;
+  const float UNIT = 10.0;
 
   for (size_t i = 0; i < 200; i++)
     for (size_t j = 0; j < 200; j++)
@@ -56,17 +56,24 @@ Ground::Ground()
     }
   model->regenerate_buffers();
 
-  auto texture = std::make_shared<ZD::Texture>(
-    ZD::Image::load("textures/ground105_diffuse.tga"),
-    ZD::TextureParameters { .generate_mipmap = true, .min_filter = GL_LINEAR_MIPMAP_LINEAR });
+  const ZD::TextureParameters texture_params { .wrap = ZD::TextureWrap { UNIT, UNIT },
+                                               .generate_mipmap = true,
+                                               .min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                                               .wrap_mode = GL_REPEAT };
+  auto texture = std::make_shared<ZD::Texture>(ZD::Image::load("textures/ground105_diffuse.tga"), texture_params);
   texture->set_name("sampler");
   model->add_texture(texture);
 
-  texture = std::make_shared<ZD::Texture>(
-    ZD::Image::load("textures/ground104_diffuse.tga"),
-    ZD::TextureParameters { .generate_mipmap = true, .min_filter = GL_LINEAR_MIPMAP_LINEAR });
+  texture = std::make_shared<ZD::Texture>(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
   texture->set_name("sampler2");
   model->add_texture(texture);
 
   add_model(model);
+}
+
+void Ground::draw(const ZD::View &view)
+{
+  shader->use();
+  shader->set_uniform<glm::vec3>("sky_color", { 0.78, 0.94, 1.0 });
+  Entity::draw(*shader, view);
 }

@@ -76,26 +76,27 @@ int main()
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
   //renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
+  renderer.clear_background_color(ZD::Color {200, 240, 255});
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
 
+  auto ground = std::make_shared<Ground>();
   Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
   std::vector<Prop> props;
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 2; j++)
+  for (ssize_t i = -4; i < 8; i++)
+    for (ssize_t j = 4; j < 8; j++)
     {
-      glm::vec3 pos { -40.0, -2.0, -20.0 };
-      pos.x += i * 10.0;
-      pos.z += j * 10.0;
+      glm::vec3 pos { 0.0, -2.0, 0.0 };
+      pos.x += i * 20.0;
+      pos.z += j * 20.0;
+      pos.y = ground->get_y(pos.x, pos.z);
       props.push_back(Prop { PropType::Tree, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
     }
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(100.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.01, 1000.0)),
+      ZD::Camera::Fov::from_degrees(100.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.01, 2000.0)),
     glm::vec3(0.0, 0.0, 0.0));
-
-  auto ground = std::make_shared<Ground>();
 
   glm::vec3 camera_position { 0.0, 0.0, 0.0 };
 
@@ -149,7 +150,7 @@ int main()
     {
       prop.draw(*Mech::model_shader, view);
     }
-    ground->draw(*ground->get_shader_program(), view);
+    ground->draw(view);
 
     if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
     {

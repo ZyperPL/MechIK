@@ -11,7 +11,7 @@ public:
 
   float get_y(const float x, const float z) const
   {
-    return sin(x / 41.431) * cos(z / 1.311) * 2.13 + sin(z / 10.331) * cos(x / 12.251) * 3.511;
+    return sin(x / 41.431) * cos(z / 111.311) * 12.13 + sin(z / 30.331) * cos(x / 412.251) * 3.511 + sin(x / 12.31) * 10.2 + cos(z / 41.143) * 12.34 + sin(x * 10.13) * 3.1123;
   };
 
   glm::vec3 get_n(const float x, const float z) const
@@ -22,6 +22,7 @@ public:
     return glm::cross(b - a, c - a);
   };
 
+  void draw(const ZD::View &view);
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
 };

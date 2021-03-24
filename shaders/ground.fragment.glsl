@@ -22,15 +22,20 @@ float noise(vec2 p){
 
 uniform sampler2D sampler;
 uniform sampler2D sampler2;
+uniform vec3 sky_color = vec3(0.0, 0.0, 1.0);
+uniform vec2 texture_wrap;
 
 out vec4 fragColor;
 void main()
 {
+  vec2 nuv = uv * texture_wrap;
   float e = clamp((elevation - 0.9) * 2.0, 0.0, 1.0);
-  fragColor = texture(sampler, uv) * e + texture(sampler2, uv) * (1.0 - e);
-  fragColor += (texture(sampler2, uv / (dst_to_camera / 2.0)) / 32.0);
-  fragColor.rgb *= (0.6 + light);
+  fragColor = texture(sampler, nuv) * e + texture(sampler2, nuv) * (1.0 - e);
+  fragColor += (texture(sampler2, nuv / (dst_to_camera / 2.0)) / 32.0);
+  fragColor.rgb *= clamp(0.5 + light, 0.01, 1.99);
   
   float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
-  fragColor.rgb += noise(uv * 12334.5232) * noise_value;
+  fragColor.rgb += noise(nuv * 12334.5232) * noise_value;
+
+  fragColor.rgb += sky_color * clamp(dst_to_camera / 2000.0, 0.0, 1.0);
 }
