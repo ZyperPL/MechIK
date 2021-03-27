@@ -7,13 +7,19 @@
 
 enum class PropType
 {
-  Tree, House
+  Tree,
+  House
 };
 
 class Prop : public ZD::Entity
 {
 public:
   Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
+  void draw(const ZD::View &view);
+
+  const PropType type;
 
 private:
+  std::shared_ptr<ZD::ShaderProgram> shader;
+  static std::shared_ptr<ZD::ShaderProgram> default_shader;
 };

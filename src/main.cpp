@@ -76,7 +76,8 @@ int main()
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
   //renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
-  renderer.clear_background_color(ZD::Color {200, 240, 255});
+  renderer.enable_blend();
+  renderer.clear_background_color(ZD::Color { 200, 240, 255 });
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
 
@@ -148,9 +149,17 @@ int main()
     mech->render(view);
     for (auto &&prop : props)
     {
-      prop.draw(*Mech::model_shader, view);
+      // non transparent
+      if (prop.type != PropType::Tree)
+        prop.draw(view);
     }
     ground->draw(view);
+    for (auto &&prop : props)
+    {
+      // transparent
+      if (prop.type == PropType::Tree)
+        prop.draw(view);
+    }
 
     if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
     {

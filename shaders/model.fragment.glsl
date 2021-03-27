@@ -20,16 +20,32 @@ float noise(vec2 p){
 }
 
 uniform sampler2D sampler;
+uniform bool has_translucency = false;
+uniform sampler2D sampler_translucency;
 
 out vec4 fragColor;
 void main()
 {
   fragColor = texture(sampler, uv);
-  if (fragColor.a < 0.5)
+  if (!has_translucency && fragColor.a < 0.5)
     discard;
   
   fragColor += (texture(sampler, uv / (dst_to_camera / 2.0)) / 32.0);
-  fragColor.rgb *= (0.6 + light);
+  
+  float tl = 0.0;
+  if (has_translucency)
+  {
+    vec3 translucency = texture(sampler_translucency, uv).rgb;
+    tl = translucency.r * translucency.g * translucency.b;
+    fragColor.a -= (tl / 12.0);
+
+    if (fragColor.a < 0.8)
+      discard;
+
+    tl = clamp(tl, 0.0, 2.0);
+  }
+  
+  fragColor.rgb *= clamp(0.6 + light + tl, 0.0, 2.0);
   
   float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
   fragColor.rgb += noise(uv * 12334.5232) * noise_value;
