@@ -9,15 +9,16 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
 : ZD::Entity(position, rotation, scale)
 , type { type }
 {
+  const ZD::TextureParameters texture_parameters { .generate_mipmap = true,
+                                                    .mag_filter = GL_NEAREST,
+                                                    .min_filter = GL_LINEAR_MIPMAP_NEAREST,
+                                                    .wrap_mode = GL_REPEAT };
   switch (type)
   {
     case PropType::Tree:
     {
       auto model = std::make_shared<ZD::Model>("models/huge_tree.obj");
-      const ZD::TextureParameters texture_parameters { .generate_mipmap = true,
-                                                       .mag_filter = GL_NEAREST,
-                                                       .min_filter = GL_LINEAR_MIPMAP_NEAREST,
-                                                       .wrap_mode = GL_REPEAT };
+
       auto texture =
         std::make_shared<ZD::Texture>(ZD::Image::load("textures/huge_tree_diffuse.tga"), texture_parameters);
       model->add_texture(texture);
@@ -27,6 +28,22 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
       texture->set_name("sampler_translucency");
       model->add_texture(texture);
       add_model(model);
+    }
+    break;
+    case PropType::Rock:
+    {
+      auto model = std::make_shared<ZD::Model>("models/Rock2_LOD_8k.obj");
+      auto texture =
+        std::make_shared<ZD::Texture>(ZD::Image::load("textures/Rock2_LOD_8k_diffuse.tga"), texture_parameters);
+      model->add_texture(texture);
+
+      texture =
+        std::make_shared<ZD::Texture>(ZD::Image::load("textures/Rock2_LOD_8k_normals.tga"), texture_parameters);
+      texture->set_name("sampler_normal");
+      model->add_texture(texture);
+      add_model(model);
+      this->rotation.y += fmodf((float)(rand()%300), 7.0f);
+      this->scale *= 1.0f+fmodf((float)(rand()%130), 3.0f);
     }
     break;
 
@@ -49,7 +66,7 @@ void Prop::draw(const ZD::View &view)
   switch (type)
   {
     case PropType::Tree: shader.set_uniform<bool>("has_translucency", true); break;
-    case PropType::House: break;
+    default: break;
   }
   Entity::draw(shader, view);
 }

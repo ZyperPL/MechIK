@@ -91,7 +91,7 @@ int main()
       pos.x += i * 20.0;
       pos.z += j * 20.0;
       pos.y = ground->get_y(pos.x, pos.z);
-      props.push_back(Prop { PropType::Tree, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
+      props.push_back(Prop { PropType::Rock, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
     }
 
   ZD::View view(

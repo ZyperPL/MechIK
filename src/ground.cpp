@@ -56,7 +56,7 @@ Ground::Ground()
     }
   model->regenerate_buffers();
 
-  const ZD::TextureParameters texture_params { .wrap = ZD::TextureWrap { UNIT, UNIT },
+  const ZD::TextureParameters texture_params { .wrap = ZD::TextureWrap { UNIT / 10.0f, UNIT / 10.0f },
                                                .generate_mipmap = true,
                                                .min_filter = GL_LINEAR_MIPMAP_LINEAR,
                                                .wrap_mode = GL_REPEAT };
@@ -74,6 +74,6 @@ Ground::Ground()
 void Ground::draw(const ZD::View &view)
 {
   shader->use();
-  shader->set_uniform<glm::vec3>("sky_color", { 0.78, 0.94, 1.0 });
+  shader->set_uniform<glm::vec3>("sky_color", { 0.78, 0.94, 1.2 });
   Entity::draw(*shader, view);
 }

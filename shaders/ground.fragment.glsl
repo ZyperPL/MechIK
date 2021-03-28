@@ -32,7 +32,7 @@ void main()
   float e = clamp((elevation - 0.9) * 2.0, 0.0, 1.0);
   fragColor = texture(sampler, nuv) * e + texture(sampler2, nuv) * (1.0 - e);
   fragColor += (texture(sampler2, nuv / (dst_to_camera / 2.0)) / 32.0);
-  fragColor.rgb *= clamp(0.5 + light, 0.01, 1.99);
+  fragColor.rgb *= clamp(0.8 + light, 0.01, 1.99);
   
   float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
   fragColor.rgb += noise(nuv * 12334.5232) * noise_value;
