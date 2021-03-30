@@ -18,19 +18,19 @@ public:
     {
       auto leg_entity = std::make_unique<ZD::Entity>();
       auto mdl = std::make_shared<ZD::Model>("models/mech_leg_b.obj");
-      mdl->add_texture(metal_texture);
+      leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_b.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
       mdl = std::make_shared<ZD::Model>("models/mech_leg_m.obj");
-      mdl->add_texture(metal_texture);
+      leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_m.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
       mdl = std::make_shared<ZD::Model>("models/mech_leg_e.obj");
-      mdl->add_texture(metal_texture);
+      leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_e.push_back(std::move(leg_entity));
     }
@@ -104,7 +104,7 @@ Mech::Mech(glm::vec3 position)
 {
   body = std::make_unique<ZD::Entity>();
   auto body_model = std::make_shared<ZD::Model>("models/mech_body.obj");
-  body_model->add_texture(std::make_shared<ZD::Texture>(
+  body->add_texture(std::make_shared<ZD::Texture>(
     ZD::Image::load("textures/metal29_specular.tga"),
     ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR }));
   body->add_model(body_model);

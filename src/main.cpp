@@ -77,15 +77,15 @@ int main()
   //renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
   renderer.enable_blend();
-  renderer.clear_background_color(ZD::Color { 200, 240, 255 });
+  renderer.clear_background_color(ZD::Color { 225, 240, 255 });
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
 
   auto ground = std::make_shared<Ground>();
   Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
   std::vector<Prop> props;
-  for (ssize_t i = -4; i < 8; i++)
-    for (ssize_t j = 4; j < 8; j++)
+  for (ssize_t i = -4; i < 8/3; i++)
+    for (ssize_t j = 4; j < 8/3; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 20.0;
@@ -109,15 +109,15 @@ int main()
     renderer.update();
     imgui_frame();
 
-    ImGui::Begin("Test");
-    ImGui::Text("ABCD");
-    ImGui::End();
+    //ImGui::Begin("Test");
+    //ImGui::Text("ABCD");
+    //ImGui::End();
 
-    float CAMERA_STEP_SIZE = 0.01;
+    float CAMERA_STEP_SIZE = 1.0;
     if (window->input()->key(ZD::Key::LeftShift))
       CAMERA_STEP_SIZE *= 10.0;
     if (window->input()->key(ZD::Key::LeftControl))
-      CAMERA_STEP_SIZE *= 10.0;
+      CAMERA_STEP_SIZE /= 10.0;
 
     if (window->input()->key(ZD::Key::W))
     {
