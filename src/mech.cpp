@@ -105,7 +105,7 @@ Mech::Mech(glm::vec3 position)
   body = std::make_unique<ZD::Entity>();
   auto body_model = std::make_shared<ZD::Model>("models/mech_body.obj");
   body->add_texture(std::make_shared<ZD::Texture>(
-    ZD::Image::load("textures/metal29_specular.tga"),
+    ZD::Image::load("textures/metal29_diffuse.tga"),
     ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR }));
   body->add_model(body_model);
   body->set_position(position);
