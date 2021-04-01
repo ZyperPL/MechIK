@@ -21,7 +21,13 @@ public:
 
   void draw(const ZD::View &view);
 
+  void set_fog_color(const ZD::Color color)
+  {
+    fog_color = { color.red_float(), color.green_float(), color.blue_float() };
+  }
+
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
   const float UNIT { 10.0f };
+  glm::vec3 fog_color { 0.88, 0.94, 1.0 };
 };
