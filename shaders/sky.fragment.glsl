@@ -19,21 +19,35 @@ float noise(vec2 p){
 	return res*res;
 }
 
-uniform vec3 sky_color = vec3(0.8, 0.9, 1.0);
+uniform vec3 sky_color = vec3(0.01, 0.01, 1.0);
+uniform vec3 cloud_color = vec3(0.95, 0.98, 1.01);
 uniform float time = 0.0;
 
 out vec4 fragColor;
 void main()
 {
+  const float ts = 641.124f;
+
   fragColor = vec4(sky_color, 1.0f);
   
-  vec2 nuv = uv * 10.0f;
-  nuv.x += time / 900.0f;
-  nuv.y += time / 420.0f;
-  float v = clamp(noise(nuv * 12.141f) * 1.9f, 1.0f, 1.8f);
+  vec2 nuv = uv * 8.0f;
+  nuv.x += time / ts;
+  nuv.y += time / (ts * 0.9641f);
+  float v = noise(nuv * 12.141f) * 6.741;
+  v /= noise(nuv * 41.141f) * 5.741;
+  v -= noise(nuv * 115.124f) * 5.214f;
+  v -= noise(nuv * 315.424f) * 12.214f;
+  v += noise(nuv * 22.441f) * 5.741;
+  v -= noise(nuv * 1215.424f + time * 0.415) * 8.214f;
+  v -= noise(nuv * 715.424f - time * 0.12) * 8.514f;
 
-  fragColor.rgb *= v;
+  if (v < 0.002)
+    discard;
 
-  vec2 auv = vec2(alpha / 2. + 0.5, beta / 2. + 0.5);
-  //fragColor.rgb = pow(auv.x, 10.0f);
+  if (v > 0.001 && v < 12.2)
+    fragColor.rgb += sky_color * 2.0f;
+  else
+    fragColor.rgb = clamp(v, 0.1f, 1.00f) * cloud_color;
+
+  //vec2 auv = vec2(alpha / 2. + 0.5, beta / 2. + 0.5);
 }

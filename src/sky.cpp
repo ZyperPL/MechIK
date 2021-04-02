@@ -15,8 +15,8 @@ Sky::Sky(const ZD::Color sky_color)
 
   position.y = 200.0f;
 
-  scale.x = 40.0f;
-  scale.z = 40.0f;
+  scale.x = 80.0f;
+  scale.z = 80.0f;
 }
 
 void Sky::render(const ZD::View &view)

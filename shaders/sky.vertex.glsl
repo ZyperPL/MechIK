@@ -25,7 +25,8 @@ void main()
   uv = vertex_uv;
 
   float dst_to_camera = length(position_camera_space);
-  gl_Position.y += dst_to_camera*dst_to_camera / 10000.0f;
+  //if (dst_to_camera > 1000.0)
+  //  gl_Position.y += dst_to_camera;
 
   alpha = dot(normalize(position_camera_space.xyz), normalize(position_model_space.xyz));
   beta =  dot(normalize(position_camera_space.xyz), normalize(position_model_space.xyz));

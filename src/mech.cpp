@@ -11,7 +11,10 @@ public:
   {
     auto metal_texture = std::make_shared<ZD::Texture>(
       ZD::Image::load("textures/metal29_diffuse.tga"),
-      ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+      ZD::TextureParameters { .generate_mipmap = true,
+                              .mag_filter = GL_LINEAR_MIPMAP_LINEAR,
+                              .min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                              .wrap_mode = GL_REPEAT });
 
     const size_t LEG_PAIRS = 2;
     for (size_t i = 0; i < LEG_PAIRS * 2; i++)
@@ -106,7 +109,10 @@ Mech::Mech(glm::vec3 position)
   auto body_model = std::make_shared<ZD::Model>("models/mech_body.obj");
   body->add_texture(std::make_shared<ZD::Texture>(
     ZD::Image::load("textures/metal29_diffuse.tga"),
-    ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR }));
+    ZD::TextureParameters { .generate_mipmap = true,
+                            .mag_filter = GL_LINEAR_MIPMAP_LINEAR,
+                            .min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                            .wrap_mode = GL_REPEAT }));
   body->add_model(body_model);
   body->set_position(position);
 
