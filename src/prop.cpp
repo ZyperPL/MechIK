@@ -17,7 +17,7 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
   {
     case PropType::Tree:
     {
-      auto model = std::make_shared<ZD::Model>("models/huge_tree.obj");
+      auto model = ZD::Model::load("models/huge_tree.obj");
 
       auto texture =
         std::make_shared<ZD::Texture>(ZD::Image::load("textures/huge_tree_diffuse.tga"), texture_parameters);
@@ -32,7 +32,7 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
     break;
     case PropType::Rock:
     {
-      auto model = std::make_shared<ZD::Model>("models/Rock2_LOD_8k.obj");
+      auto model = ZD::Model::load("models/Rock2_LOD_8k.obj");
       auto texture =
         std::make_shared<ZD::Texture>(ZD::Image::load("textures/Rock2_LOD_8k_diffuse.tga"), texture_parameters);
       add_texture(texture);
@@ -43,7 +43,7 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
       add_texture(texture);
       add_model(model);
       this->rotation.y += fmodf((float)(rand()%300), 7.0f);
-      this->scale *= 1.0f+fmodf((float)(rand()%130), 3.0f);
+      this->scale *= 0.1f+fmodf((float)(rand()%130), 4.0f);
     }
     break;
 

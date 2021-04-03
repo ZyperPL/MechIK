@@ -34,7 +34,7 @@ void main()
   vec2 nuv = uv * texture_wrap;
   float dst = length(position_camera_space);
 
-  float e = clamp((position_model_space.y - 0.9) * 2.0, 0.0, 1.0);
+  float e = clamp((position_model_space.y + 2.0) / 20.0, 0.0, 1.0);
   fragColor = texture(sampler, nuv) * e + texture(sampler2, nuv) * (1.0 - e);
   fragColor += (texture(sampler2, nuv / (dst / 1.0)) / 24.0);
   fragColor.rgb *= clamp(0.8 + light, 0.01, 1.99);

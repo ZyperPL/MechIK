@@ -11,7 +11,7 @@ Sky::Sky(const ZD::Color sky_color)
              .add(ZD::File("shaders/sky.fragment.glsl"), GL_FRAGMENT_SHADER)
              .compile();
 
-  add_model(std::make_shared<ZD::Model>("models/sky.obj"));
+  add_model(ZD::Model::load("models/sky.obj"));
 
   position.y = 200.0f;
 

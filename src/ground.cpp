@@ -13,7 +13,7 @@ Ground::Ground()
              .add(ZD::File("shaders/ground.fragment.glsl"), GL_FRAGMENT_SHADER)
              .compile();
 
-  auto model = std::make_shared<ZD::Model>();
+  auto model = ZD::Model::create();
 
   for (size_t i = 0; i < 200; i++)
     for (size_t j = 0; j < 200; j++)

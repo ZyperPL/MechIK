@@ -20,19 +20,19 @@ public:
     for (size_t i = 0; i < LEG_PAIRS * 2; i++)
     {
       auto leg_entity = std::make_unique<ZD::Entity>();
-      auto mdl = std::make_shared<ZD::Model>("models/mech_leg_b.obj");
+      auto mdl = ZD::Model::load("models/mech_leg_b.obj");
       leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_b.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
-      mdl = std::make_shared<ZD::Model>("models/mech_leg_m.obj");
+      mdl = ZD::Model::load("models/mech_leg_m.obj");
       leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_m.push_back(std::move(leg_entity));
 
       leg_entity = std::make_unique<ZD::Entity>();
-      mdl = std::make_shared<ZD::Model>("models/mech_leg_e.obj");
+      mdl = ZD::Model::load("models/mech_leg_e.obj");
       leg_entity->add_texture(metal_texture);
       leg_entity->add_model(mdl);
       legs_e.push_back(std::move(leg_entity));
@@ -106,7 +106,7 @@ Mech::Mech(glm::vec3 position)
 : ZD::Entity(position, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 })
 {
   body = std::make_unique<ZD::Entity>();
-  auto body_model = std::make_shared<ZD::Model>("models/mech_body.obj");
+  auto body_model = ZD::Model::load("models/mech_body.obj");
   body->add_texture(std::make_shared<ZD::Texture>(
     ZD::Image::load("textures/metal29_diffuse.tga"),
     ZD::TextureParameters { .generate_mipmap = true,

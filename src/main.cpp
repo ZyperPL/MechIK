@@ -89,14 +89,19 @@ int main()
 
   Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
   std::vector<Prop> props;
-  for (ssize_t i = -4; i < 8/3; i++)
-    for (ssize_t j = 4; j < 8/3; j++)
+  for (ssize_t i = -20; i < 20; i++)
+    for (ssize_t j = -20; j < 20; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 20.0;
       pos.z += j * 20.0;
       pos.y = ground->get_y(pos.x, pos.z);
-      props.push_back(Prop { PropType::Rock, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
+
+      if (pos.y > 1.0)
+      {
+        props.push_back(Prop { PropType::Rock, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
+        break;
+      }
     }
 
   Sky sky(sky_color);
