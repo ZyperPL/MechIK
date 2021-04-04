@@ -16,7 +16,7 @@ public:
     const glm::vec3 a { x, get_y(x, z), z };
     const glm::vec3 b { x + 1, get_y(x + 1, z), z };
     const glm::vec3 c { x, get_y(x, z + 1), z + 1 };
-    return glm::cross(b - a, c - a);
+    return glm::normalize(glm::cross(a - b, c - a));
   };
 
   void draw(const ZD::View &view);

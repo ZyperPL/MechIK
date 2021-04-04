@@ -5,8 +5,10 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "3rd/stb_perlin.h"
 
+#include "debug.hpp"
+
 Ground::Ground()
-: ZD::Entity({ 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 })
+: ZD::Entity({ 0.0, 0.0, 0.0 }, {}, { 1.0, 1.0, 1.0 })
 {
   shader = ZD::ShaderLoader()
              .add(ZD::File("shaders/ground.vertex.glsl"), GL_VERTEX_SHADER)
@@ -30,6 +32,8 @@ Ground::Ground()
       model->add_uv(0.0, 0.0);
       glm::vec3 n = get_n(x, z);
       model->add_normal(n.x, n.y, n.z);
+
+      DBG("Ground Normals", Debug::add_line(glm::vec3 { x, y0, z }, glm::vec3 { x, y0, z } + n * 10.0f));
 
       model->add_vertex(x, y1, z + UNIT);
       model->add_uv(0.0, 1.0);

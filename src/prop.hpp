@@ -15,7 +15,7 @@ enum class PropType
 class Prop : public ZD::Entity
 {
 public:
-  Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
+  Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
   void draw(const ZD::View &view);
 
   const PropType type;

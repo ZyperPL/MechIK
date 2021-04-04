@@ -5,7 +5,7 @@
 
 std::shared_ptr<ZD::ShaderProgram> Prop::default_shader;
 
-Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
+Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 : ZD::Entity(position, rotation, scale)
 , type { type }
 {
@@ -42,8 +42,8 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::vec3 rotation, glm::vec
       texture->set_name("sampler_normal");
       add_texture(texture);
       add_model(model);
-      this->rotation.y += fmodf((float)(rand()%300), 7.0f);
-      this->scale *= 0.1f+fmodf((float)(rand()%130), 4.0f);
+      //this->rotation.y += fmodf((float)(rand()%300), 7.0f);
+      this->scale *= 0.5f+fmodf((float)(rand()%130), 3.0f);
     }
     break;
 

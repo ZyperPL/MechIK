@@ -11,7 +11,19 @@
 #include "ZD/Texture.hpp"
 #include "ZD/View.hpp"
 
-class LegEntity;
+class LegEntity
+{
+public:
+  LegEntity();
+
+  void update_positions(const ZD::Entity &parent);
+  void render(ZD::ShaderProgram &program, ZD::View &view);
+
+private:
+  std::vector<std::shared_ptr<ZD::Entity>> legs_b;
+  std::vector<std::shared_ptr<ZD::Entity>> legs_m;
+  std::vector<std::shared_ptr<ZD::Entity>> legs_e;
+};
 
 class Mech : public ZD::Entity {
 public:

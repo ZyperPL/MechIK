@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "ZD/Entity.hpp"
 #include "ZD/Input.hpp"
 #include "ZD/Model.hpp"
@@ -14,6 +16,8 @@
 #include "3rd/imgui/imgui.h"
 #include "3rd/imgui/imgui_impl_glfw.h"
 #include "3rd/imgui/imgui_impl_opengl3.h"
+
+#include "debug.hpp"
 
 #define WINDOW_WIDTH  1920.0
 #define WINDOW_HEIGHT 1080.0
@@ -82,25 +86,37 @@ int main()
   renderer.enable_blend();
   renderer.clear_background_color(sky_color);
 
+  Debug::init();
+
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
 
   auto ground = std::make_shared<Ground>();
   ground->set_fog_color(sky_color);
 
-  Mech *mech = new Mech { { 2.0, 5.0, 0.0 } };
+  auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 5.0, 0.0 });
   std::vector<Prop> props;
-  for (ssize_t i = -20; i < 20; i++)
-    for (ssize_t j = -20; j < 20; j++)
+  for (ssize_t i = -6; i < 6; i++)
+    for (ssize_t j = -6; j < 6; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 20.0;
       pos.z += j * 20.0;
       pos.y = ground->get_y(pos.x, pos.z);
 
-      if (pos.y > 1.0)
+      const auto n = ground->get_n(pos.x, pos.z);
+      const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+      const float s = sqrt((1.0f + theta) * 2.0f);
+      const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+      auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+
+      DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
+
+      if (pos.y > -1.0 && pos.y < 1.4)
       {
-        props.push_back(Prop { PropType::Rock, pos, { 0.0, 0.0, 0.0 }, { 1.0, 1.0, 1.0 } });
-        break;
+        props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
+      } else
+      {
+        props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
       }
     }
 
@@ -156,6 +172,12 @@ int main()
       camera_position -= camera_up(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
     }
 
+    const double camera_min_y = ground->get_y(camera_position.x, camera_position.z);
+    if (camera_position.y - 5.0f < camera_min_y)
+    {
+      camera_position.y = camera_min_y + 5.0f;
+    }
+
     view.set_position(camera_position);
     view.set_target(mech->get_position());
     sky.render(view);
@@ -185,7 +207,10 @@ int main()
       camera_position.z -= 4.0f;
     }
 
+    Debug::draw_lines(view);
+
     imgui_render();
+
     renderer.render();
   }
 
