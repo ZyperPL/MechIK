@@ -9,41 +9,36 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
 : ZD::Entity(position, rotation, scale)
 , type { type }
 {
-  const ZD::TextureParameters texture_parameters { .generate_mipmap = true,
-                                                    .mag_filter = GL_NEAREST,
-                                                    .min_filter = GL_LINEAR_MIPMAP_NEAREST,
-                                                    .wrap_mode = GL_REPEAT };
+  const ZD::TextureParameters texture_parameters {
+    .generate_mipmap = true, .mag_filter = GL_NEAREST, .min_filter = GL_LINEAR_MIPMAP_NEAREST, .wrap_mode = GL_REPEAT
+  };
   switch (type)
   {
     case PropType::Tree:
     {
       auto model = ZD::Model::load("models/huge_tree.obj");
 
-      auto texture =
-        std::make_shared<ZD::Texture>(ZD::Image::load("textures/huge_tree_diffuse.tga"), texture_parameters);
+      auto texture = ZD::Texture::load(ZD::Image::load("textures/huge_tree_diffuse.tga"), texture_parameters);
       add_texture(texture);
 
-      texture =
-        std::make_shared<ZD::Texture>(ZD::Image::load("textures/huge_tree_translucency.tga"), texture_parameters);
+      texture = ZD::Texture::load(ZD::Image::load("textures/huge_tree_translucency.tga"), texture_parameters);
       texture->set_name("sampler_translucency");
-      add_texture(texture);
-      add_model(model);
+      add_texture(std::move(texture));
+      add_model(std::move(model));
     }
     break;
     case PropType::Rock:
     {
       auto model = ZD::Model::load("models/Rock2_LOD_8k.obj");
-      auto texture =
-        std::make_shared<ZD::Texture>(ZD::Image::load("textures/Rock2_LOD_8k_diffuse.tga"), texture_parameters);
-      add_texture(texture);
+      auto texture = ZD::Texture::load(ZD::Image::load("textures/Rock2_LOD_8k_diffuse.tga"), texture_parameters);
+      add_texture(std::move(texture));
 
-      texture =
-        std::make_shared<ZD::Texture>(ZD::Image::load("textures/Rock2_LOD_8k_normals.tga"), texture_parameters);
+      texture = ZD::Texture::load(ZD::Image::load("textures/Rock2_LOD_8k_normals.tga"), texture_parameters);
       texture->set_name("sampler_normal");
-      add_texture(texture);
-      add_model(model);
+      add_texture(std::move(texture));
+      add_model(std::move(model));
       //this->rotation.y += fmodf((float)(rand()%300), 7.0f);
-      this->scale *= 0.5f+fmodf((float)(rand()%130), 3.0f);
+      this->scale *= 0.5f + fmodf((float)(rand() % 130), 3.0f);
     }
     break;
 

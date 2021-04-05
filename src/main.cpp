@@ -95,8 +95,8 @@ int main()
 
   auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 5.0, 0.0 });
   std::vector<Prop> props;
-  for (ssize_t i = -6; i < 6; i++)
-    for (ssize_t j = -6; j < 6; j++)
+  for (ssize_t i = -20; i < 40; i++)
+    for (ssize_t j = -20; j < 40; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 20.0;
@@ -114,7 +114,8 @@ int main()
       if (pos.y > -1.0 && pos.y < 1.4)
       {
         props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
-      } else
+      }
+      else
       {
         props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
       }

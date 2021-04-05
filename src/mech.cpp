@@ -6,7 +6,7 @@ ZD::ShaderProgram *Mech::model_shader = nullptr;
 
 LegEntity::LegEntity()
 {
-  auto metal_texture = std::make_shared<ZD::Texture>(
+  auto metal_texture = ZD::Texture::load(
     ZD::Image::load("textures/metal29_diffuse.tga"),
     ZD::TextureParameters { .generate_mipmap = true,
                             .mag_filter = GL_LINEAR,
@@ -99,7 +99,7 @@ Mech::Mech(glm::vec3 position)
 {
   body = std::make_unique<ZD::Entity>();
   auto body_model = ZD::Model::load("models/mech_body.obj");
-  body->add_texture(std::make_shared<ZD::Texture>(
+  body->add_texture(ZD::Texture::load(
     ZD::Image::load("textures/metal29_diffuse.tga"),
     ZD::TextureParameters { .generate_mipmap = true,
                             .mag_filter = GL_LINEAR,

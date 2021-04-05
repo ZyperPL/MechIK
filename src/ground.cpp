@@ -66,11 +66,11 @@ Ground::Ground()
                                                .generate_mipmap = true,
                                                .min_filter = GL_LINEAR_MIPMAP_LINEAR,
                                                .wrap_mode = GL_REPEAT };
-  auto texture = std::make_shared<ZD::Texture>(ZD::Image::load("textures/ground105_diffuse.tga"), texture_params);
+  auto texture = ZD::Texture::load(ZD::Image::load("textures/ground105_diffuse.tga"), texture_params);
   texture->set_name("sampler");
   add_texture(texture);
 
-  texture = std::make_shared<ZD::Texture>(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
+  texture = ZD::Texture::load(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
   texture->set_name("sampler2");
   add_texture(texture);
 
