@@ -86,7 +86,6 @@ struct Debug
 
   static bool enabled(const std::string key)
   {
-    printf("%s\n", key.data());
     return Debug::option.contains(key) ? Debug::option.at(key) : !Debug::option.insert_or_assign(key, false).second;
   }
   static void enable(const std::string key) { Debug::option.insert_or_assign(key, true); }

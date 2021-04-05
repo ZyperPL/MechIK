@@ -1,6 +1,6 @@
 # Blender v2.92.0 OBJ File: ''
 # www.blender.org
-mtllib mech_leg_m.mtl
+mtllib models/mech_leg_m.mtl
 o Gun.036_Gun.029
 v -0.244042 -0.050220 0.173035
 v -0.089343 -0.272674 0.170571
