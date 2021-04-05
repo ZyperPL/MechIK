@@ -146,12 +146,36 @@ int main()
     renderer.update();
     imgui_frame();
 
-    ImGui::Begin("Debug options");
+    if (ImGui::Begin("Debug options"))
     {
       ImGui::Text("Options available: %lu", Debug::option.size());
       for (auto &&option : Debug::option)
         ImGui::Checkbox(option.first.data(), &option.second);
 
+      ImGui::End();
+    }
+
+    if (ImGui::Begin("Camera"))
+    {
+      ImGui::Text(
+        "Camera position: %24.12f, %24.12f, %24.12f", camera_position.x, camera_position.y, camera_position.z);
+      if (ImGui::Button("Set origin to center"))
+        camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
+
+      ImGui::End();
+    }
+
+    if (ImGui::Begin("Mech"))
+    {
+      ImGui::Text(
+        "Position: %24.12f, %24.12f, %24.12f", mech->get_position().x, mech->get_position().y, mech->get_position().z);
+      ImGui::Text(
+        "Rotation: %24.12f, %24.12f, %24.12f, %24.12f",
+        mech->get_rotation().x,
+        mech->get_rotation().y,
+        mech->get_rotation().z,
+        mech->get_rotation().w);
+      
       ImGui::End();
     }
 
