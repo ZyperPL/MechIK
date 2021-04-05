@@ -95,8 +95,8 @@ int main()
 
   auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 5.0, 0.0 });
   std::vector<Prop> props;
-  for (ssize_t i = -20; i < 40; i++)
-    for (ssize_t j = -20; j < 40; j++)
+  for (ssize_t i = -5; i < 6; i++)
+    for (ssize_t j = -5; j < 6; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 20.0;

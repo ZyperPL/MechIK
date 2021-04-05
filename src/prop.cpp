@@ -18,10 +18,10 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
     {
       auto model = ZD::Model::load("models/huge_tree.obj");
 
-      auto texture = ZD::Texture::load(ZD::Image::load("textures/huge_tree_diffuse.tga"), texture_parameters);
+      auto texture = ZD::Texture::load("textures/huge_tree_diffuse.tga", texture_parameters);
       add_texture(texture);
 
-      texture = ZD::Texture::load(ZD::Image::load("textures/huge_tree_translucency.tga"), texture_parameters);
+      texture = ZD::Texture::load("textures/huge_tree_translucency.tga", texture_parameters);
       texture->set_name("sampler_translucency");
       add_texture(std::move(texture));
       add_model(std::move(model));
@@ -30,10 +30,10 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
     case PropType::Rock:
     {
       auto model = ZD::Model::load("models/Rock2_LOD_8k.obj");
-      auto texture = ZD::Texture::load(ZD::Image::load("textures/Rock2_LOD_8k_diffuse.tga"), texture_parameters);
+      auto texture = ZD::Texture::load("textures/Rock2_LOD_8k_diffuse.tga", texture_parameters);
       add_texture(std::move(texture));
 
-      texture = ZD::Texture::load(ZD::Image::load("textures/Rock2_LOD_8k_normals.tga"), texture_parameters);
+      texture = ZD::Texture::load("textures/Rock2_LOD_8k_normals.tga", texture_parameters);
       texture->set_name("sampler_normal");
       add_texture(std::move(texture));
       add_model(std::move(model));
