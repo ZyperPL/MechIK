@@ -89,6 +89,7 @@ int main()
   Debug::init();
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
+  ImGuiIO &imgui_io = ImGui::GetIO();
 
   auto ground = std::make_shared<Ground>();
   ground->set_fog_color(sky_color);
@@ -103,20 +104,27 @@ int main()
       pos.z += j * 20.0;
       pos.y = ground->get_y(pos.x, pos.z);
 
-      const auto n = ground->get_n(pos.x, pos.z);
-      const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-      const float s = sqrt((1.0f + theta) * 2.0f);
-      const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-      auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+      auto n = ground->get_n(pos.x, pos.z);
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
-      if (pos.y > -1.0 && pos.y < 1.4)
+      if (pos.y > -2.5 && pos.y < 2.0)
       {
+        pos -= n * 1.0f;
+        const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+        const float s = sqrt((1.0f + theta) * 2.0f);
+        const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+        auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
         props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
       }
       else
       {
+        pos -= n * 1.0f;
+        n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
+        const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+        const float s = sqrt((1.0f + theta) * 2.0f);
+        const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+        auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
         props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
       }
     }
@@ -138,9 +146,14 @@ int main()
     renderer.update();
     imgui_frame();
 
-    //ImGui::Begin("Test");
-    //ImGui::Text("ABCD");
-    //ImGui::End();
+    ImGui::Begin("Debug options");
+    {
+      ImGui::Text("Options available: %lu", Debug::option.size());
+      for (auto &&option : Debug::option)
+        ImGui::Checkbox(option.first.data(), &option.second);
+
+      ImGui::End();
+    }
 
     float CAMERA_STEP_SIZE = 1.0;
     if (window->input()->key(ZD::Key::LeftShift))
@@ -198,14 +211,17 @@ int main()
         prop.draw(view);
     }
 
-    if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
+    if (!imgui_io.WantCaptureMouse)
     {
-      const glm::vec3 new_pos { camera_position.x,
-                                ground->get_y(camera_position.x, camera_position.z),
-                                camera_position.z };
-      mech->set_position(new_pos);
-      camera_position.x -= 4.0f;
-      camera_position.z -= 4.0f;
+      if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
+      {
+        const glm::vec3 new_pos { camera_position.x,
+                                  ground->get_y(camera_position.x, camera_position.z),
+                                  camera_position.z };
+        mech->set_position(new_pos);
+        camera_position.x -= 4.0f;
+        camera_position.z -= 4.0f;
+      }
     }
 
     Debug::draw_lines(view);

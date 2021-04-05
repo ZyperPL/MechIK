@@ -84,11 +84,18 @@ struct Debug
     glDisableVertexAttribArray(position_attribute->index);
   }
 
-  static bool enabled(const std::string key) { return Debug::option.contains(key) ? Debug::option.at(key) : false; }
+  static bool enabled(const std::string key)
+  {
+    printf("%s\n", key.data());
+    return Debug::option.contains(key) ? Debug::option.at(key) : !Debug::option.insert_or_assign(key, false).second;
+  }
+  static void enable(const std::string key) { Debug::option.insert_or_assign(key, true); }
+  static void disable(const std::string key) { Debug::option.insert_or_assign(key, false); }
+
+  static std::unordered_map<std::string, bool> option;
 
 private:
   static GLuint buffer;
   static std::vector<std::pair<glm::vec3, glm::vec3>> lines;
   static std::shared_ptr<ZD::ShaderProgram> shader;
-  static std::unordered_map<std::string, bool> option;
 };
