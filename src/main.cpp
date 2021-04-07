@@ -7,6 +7,7 @@
 #include "ZD/OpenGLRenderer.hpp"
 #include "ZD/ShaderLoader.hpp"
 #include "ZD/Window.hpp"
+#include "ZD/Screen.hpp"
 
 #include "mech.hpp"
 #include "prop.hpp"
@@ -100,8 +101,8 @@ int main()
     for (ssize_t j = -5; j < 6; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * 20.0;
-      pos.z += j * 20.0;
+      pos.x += i * 42.0;
+      pos.z += j * 44.0;
       pos.y = ground->get_y(pos.x, pos.z);
 
       auto n = ground->get_n(pos.x, pos.z);
@@ -131,18 +132,46 @@ int main()
 
   Sky sky(sky_color);
 
+  const double FAR_PLANE = 500.0;
+
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(100.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.01, 2000.0)),
+      ZD::Camera::Fov::from_degrees(100.0),
+      WINDOW_WIDTH / WINDOW_HEIGHT,
+      ZD::Camera::ClippingPlane(0.05, FAR_PLANE + 10.0)),
+    glm::vec3(0.0, 0.0, 0.0));
+
+  ZD::View view_bg(
+    ZD::Camera::PerspectiveParameters(
+      ZD::Camera::Fov::from_degrees(100.0),
+      WINDOW_WIDTH / WINDOW_HEIGHT,
+      ZD::Camera::ClippingPlane(FAR_PLANE - 10.0, 2800.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   glm::vec3 camera_position { 0.0, 0.0, 0.0 };
+
+  auto sky_fb = renderer.generate_framebuffer(
+    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+  window->add_screen(std::make_shared<ZD::Screen_GL>(sky_fb.texture, 0, 0));
+  window->get_screens().back()->flip_y = true;
+
+  auto background_fb = renderer.generate_framebuffer(
+    WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+  window->add_screen(std::make_shared<ZD::Screen_GL>(background_fb.texture, 0, 0));
+  window->get_screens().back()->flip_y = true;
+
+  auto main_fb = renderer.generate_framebuffer(
+    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+  window->add_screen(std::make_shared<ZD::Screen_GL>(main_fb.texture));
+  window->get_screens().back()->flip_y = true;
 
   printf("Ready.\n");
 
   while (window->is_open())
   {
     renderer.clear();
+    glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 1.0);
+    renderer.enable_depth_test(GL_LESS);
     renderer.update();
     imgui_frame();
 
@@ -175,7 +204,7 @@ int main()
         mech->get_rotation().y,
         mech->get_rotation().z,
         mech->get_rotation().w);
-      
+
       ImGui::End();
     }
 
@@ -218,8 +247,24 @@ int main()
 
     view.set_position(camera_position);
     view.set_target(mech->get_position());
-    sky.render(view);
 
+    view_bg.set_position(camera_position);
+    view_bg.set_target(mech->get_position());
+
+    renderer.bind_framebuffer(sky_fb);
+    glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 0.0);
+    sky.render(view_bg);
+    sky.render(view);
+    renderer.unbind_framebuffer();
+
+    renderer.bind_framebuffer(background_fb);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    ground->draw(view_bg);
+    mech->render(view_bg);
+    renderer.unbind_framebuffer();
+
+    renderer.bind_framebuffer(main_fb);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
     mech->render(view);
     for (auto &&prop : props)
     {
@@ -249,9 +294,12 @@ int main()
     }
 
     Debug::draw_lines(view);
+    renderer.unbind_framebuffer();
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    renderer.disable_depth_test();
 
+    renderer.render_screens();
     imgui_render();
-
     renderer.render();
   }
 
