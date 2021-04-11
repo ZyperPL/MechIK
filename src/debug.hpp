@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 
+class Mech;
 struct Debug;
 
 #ifdef DEBUG
@@ -92,6 +93,8 @@ struct Debug
   static void disable(const std::string key) { Debug::option.insert_or_assign(key, false); }
 
   static std::unordered_map<std::string, bool> option;
+
+  static void mech_properties(Mech &);
 
 private:
   static GLuint buffer;

@@ -11,28 +11,28 @@
 #include "ZD/Texture.hpp"
 #include "ZD/View.hpp"
 
-class LegEntity
+struct LegPart : public ZD::Entity
 {
-public:
-  LegEntity();
+  LegPart(const size_t part_index);
+  virtual ~LegPart() = default;
 
-  void update_positions(const ZD::Entity &parent);
-  void render(ZD::ShaderProgram &program, ZD::View &view);
-
-private:
-  std::vector<std::shared_ptr<ZD::Entity>> legs_b;
-  std::vector<std::shared_ptr<ZD::Entity>> legs_m;
-  std::vector<std::shared_ptr<ZD::Entity>> legs_e;
+  const size_t part_index;
+  glm::quat target_rotation { 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
-class Mech : public ZD::Entity {
+class Mech : public ZD::Entity
+{
 public:
   Mech(glm::vec3 position);
   void render(ZD::View &view);
 
-  static ZD::ShaderProgram *model_shader;
 private:
-  std::unique_ptr<ZD::Entity> body;
-  std::vector<std::unique_ptr<LegEntity>> legs;
   std::shared_ptr<ZD::ShaderProgram> shader;
+
+  std::unique_ptr<ZD::Entity> body;
+  std::vector<std::unique_ptr<LegPart>> legs_b;
+  std::vector<std::unique_ptr<LegPart>> legs_m;
+  std::vector<std::unique_ptr<LegPart>> legs_e;
+
+  friend struct Debug;
 };

@@ -47,8 +47,7 @@ void imgui_setup(const ZD::Window_GLFW &window)
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  //io.Fonts->AddFontFromFileTTF("./data/Roboto-Medium.ttf", 16.0f);
-  //io.Fonts->AddFontFromFileTTF("./data/Roboto-Regular.ttf", 16.0f);
+  io.Fonts->AddFontFromFileTTF("fonts/iosevka-regular.ttf", 16.0f);
 
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(window.get_handle(), true);
@@ -95,7 +94,7 @@ int main()
   auto ground = std::make_shared<Ground>();
   ground->set_fog_color(sky_color);
 
-  auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 5.0, 0.0 });
+  auto mech = std::make_shared<Mech>(glm::vec3 { 4.0, 8.0, 3.0 });
   std::vector<Prop> props;
   for (ssize_t i = -5; i < 6; i++)
     for (ssize_t j = -5; j < 6; j++)
@@ -148,7 +147,7 @@ int main()
       ZD::Camera::ClippingPlane(FAR_PLANE - 10.0, 2800.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
-  glm::vec3 camera_position { 0.0, 0.0, 0.0 };
+  glm::vec3 camera_position { 0.0, 2.0, 0.0 };
 
   auto sky_fb = renderer.generate_framebuffer(
     WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
@@ -180,33 +179,24 @@ int main()
       ImGui::Text("Options available: %lu", Debug::option.size());
       for (auto &&option : Debug::option)
         ImGui::Checkbox(option.first.data(), &option.second);
-
-      ImGui::End();
     }
+    ImGui::End();
 
+    static bool camera_noclip = false;
     if (ImGui::Begin("Camera"))
     {
       ImGui::Text(
-        "Camera position: %24.12f, %24.12f, %24.12f", camera_position.x, camera_position.y, camera_position.z);
+        "Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
       if (ImGui::Button("Set origin to center"))
         camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
 
-      ImGui::End();
+      ImGui::Checkbox("Noclip", &camera_noclip);
     }
+    ImGui::End();
 
     if (ImGui::Begin("Mech"))
-    {
-      ImGui::Text(
-        "Position: %24.12f, %24.12f, %24.12f", mech->get_position().x, mech->get_position().y, mech->get_position().z);
-      ImGui::Text(
-        "Rotation: %24.12f, %24.12f, %24.12f, %24.12f",
-        mech->get_rotation().x,
-        mech->get_rotation().y,
-        mech->get_rotation().z,
-        mech->get_rotation().w);
-
-      ImGui::End();
-    }
+      Debug::mech_properties(*mech);
+    ImGui::End();
 
     float CAMERA_STEP_SIZE = 1.0;
     if (window->input()->key(ZD::Key::LeftShift))
@@ -215,34 +205,25 @@ int main()
       CAMERA_STEP_SIZE /= 10.0;
 
     if (window->input()->key(ZD::Key::W))
-    {
       camera_position -= camera_forward(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
     if (window->input()->key(ZD::Key::S))
-    {
       camera_position += camera_forward(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
     if (window->input()->key(ZD::Key::A))
-    {
       camera_position += camera_right(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
     if (window->input()->key(ZD::Key::D))
-    {
       camera_position -= camera_right(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
     if (window->input()->key(ZD::Key::E))
-    {
       camera_position += camera_up(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
     if (window->input()->key(ZD::Key::Q))
-    {
       camera_position -= camera_up(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
-    }
 
-    const double camera_min_y = ground->get_y(camera_position.x, camera_position.z);
-    if (camera_position.y - 5.0f < camera_min_y)
+    if (!camera_noclip)
     {
-      camera_position.y = camera_min_y + 5.0f;
+      const double camera_min_y = ground->get_y(camera_position.x, camera_position.z);
+      if (camera_position.y - 5.0f < camera_min_y)
+      {
+        camera_position.y = camera_min_y + 5.0f;
+      }
     }
 
     view.set_position(camera_position);
@@ -285,7 +266,7 @@ int main()
       if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
       {
         const glm::vec3 new_pos { camera_position.x,
-                                  ground->get_y(camera_position.x, camera_position.z),
+                                  ground->get_y(camera_position.x, camera_position.z) + 5.0f,
                                   camera_position.z };
         mech->set_position(new_pos);
         camera_position.x -= 4.0f;
