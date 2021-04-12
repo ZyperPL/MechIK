@@ -45,19 +45,19 @@ Ground::Ground()
       n = get_n(x + UNIT, z);
       model->add_normal(n.x, n.y, n.z);
 
-      model->add_vertex(x, y1, z + UNIT);
-      model->add_uv(0.0, 1.0);
-      n = get_n(x, z + UNIT);
+      model->add_vertex(x + UNIT, y3, z + UNIT);
+      model->add_uv(1.0, 1.0);
+      n = get_n(x + UNIT, z + UNIT);
       model->add_normal(n.x, n.y, n.z);
 
       model->add_vertex(x + UNIT, y2, z);
       model->add_uv(1.0, 0.0);
       n = get_n(x + UNIT, z);
       model->add_normal(n.x, n.y, n.z);
-
-      model->add_vertex(x + UNIT, y3, z + UNIT);
-      model->add_uv(1.0, 1.0);
-      n = get_n(x + UNIT, z + UNIT);
+      
+      model->add_vertex(x, y1, z + UNIT);
+      model->add_uv(0.0, 1.0);
+      n = get_n(x, z + UNIT);
       model->add_normal(n.x, n.y, n.z);
     }
   model->regenerate_buffers();
@@ -72,6 +72,10 @@ Ground::Ground()
 
   texture = ZD::Texture::load(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
   texture->set_name("sampler2");
+  add_texture(texture);
+  
+  texture = ZD::Texture::load(ZD::Image::load("textures/ground106_diffuse.tga"), texture_params);
+  texture->set_name("sampler3");
   add_texture(texture);
 
   add_model(model);

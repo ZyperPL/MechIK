@@ -11,10 +11,10 @@ void Debug::mech_properties(Mech &mech)
 {
   ImGui::Text("Position: %6.4f, %6.4f, %6.4f", mech.get_position().x, mech.get_position().y, mech.get_position().z);
 
-  static bool in_quaternions = true;
-  ImGui::Checkbox("In Quaternions", &in_quaternions);
+  static bool as_quaternions = true;
+  ImGui::Checkbox("As Quaternions", &as_quaternions);
 
-  if (in_quaternions)
+  if (as_quaternions)
   {
     ImGui::Text(
       "Rotation: %6.4f, %6.4f, %6.4f, %6.4f",
@@ -38,14 +38,19 @@ void Debug::mech_properties(Mech &mech)
       ImGui::SameLine();
       ImGui::Text("%6.4f, %6.4f, %6.4f, %6.4f", brot.x, brot.y, brot.z, brot.w);
 
+      ImGui::PushID(i * 1000 + 1);
       ImGui::Text("Middle    ");
       ImGui::SameLine();
       ImGui::Text("%6.4f, %6.4f, %6.4f, %6.4f", mrot.x, mrot.y, mrot.z, mrot.w);
 
+      ImGui::PushID(i * 1000 + 2);
       ImGui::Text("End       ");
       ImGui::SameLine();
       ImGui::Text("%6.4f, %6.4f, %6.4f, %6.4f", erot.x, erot.y, erot.z, erot.w);
       ImGui::Separator();
+      
+      ImGui::PopID();
+      ImGui::PopID();
       ImGui::PopID();
     }
   }
@@ -60,7 +65,7 @@ void Debug::mech_properties(Mech &mech)
     ImGui::SliderAngle("Z", &euler.z);
     mech.set_rotation(euler);
     ImGui::Columns();
-    // legs info
+    
     for (size_t i = 0; i < mech.legs_b.size(); i++)
     {
       ImGui::PushID(i * 1000 + 0);

@@ -81,7 +81,6 @@ int main()
   ZD::OGLRenderer renderer;
   renderer.set_multisampling(1);
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
-  //renderer.enable_cull_face();
   renderer.enable_depth_test(GL_LESS);
   renderer.enable_blend();
   renderer.clear_background_color(sky_color);
@@ -110,7 +109,7 @@ int main()
 
       if (pos.y > -2.5 && pos.y < 2.0)
       {
-        pos -= n * 1.0f;
+        pos += n * 1.0f;
         const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
         const float s = sqrt((1.0f + theta) * 2.0f);
         const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
@@ -171,6 +170,7 @@ int main()
     renderer.clear();
     glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 1.0);
     renderer.enable_depth_test(GL_LESS);
+    renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
 
@@ -278,6 +278,7 @@ int main()
     renderer.unbind_framebuffer();
     glClearColor(0.0, 0.0, 0.0, 0.0);
     renderer.disable_depth_test();
+    renderer.disable_cull_face();
 
     renderer.render_screens();
     imgui_render();
