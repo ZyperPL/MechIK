@@ -1,4 +1,5 @@
 #include <memory>
+#include <random>
 
 #include "ZD/Entity.hpp"
 #include "ZD/Input.hpp"
@@ -81,7 +82,6 @@ int main()
   ZD::OGLRenderer renderer;
   renderer.set_multisampling(1);
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
-  renderer.enable_depth_test(GL_LESS);
   renderer.enable_blend();
   renderer.clear_background_color(sky_color);
 
@@ -93,23 +93,25 @@ int main()
   auto ground = std::make_shared<Ground>();
   ground->set_fog_color(sky_color);
 
+  static std::random_device rd;
+  std::uniform_real_distribution<float> random(0.0f, 1.0f);
+
   auto mech = std::make_shared<Mech>(glm::vec3 { 4.0, 8.0, 3.0 });
   std::vector<Prop> props;
   for (ssize_t i = -5; i < 6; i++)
     for (ssize_t j = -5; j < 6; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * 42.0;
-      pos.z += j * 44.0;
+      pos.x += i * 42.0 + (random(rd)-0.5) * 15.0;
+      pos.z += j * 44.0 + (random(rd)-0.5) * 21.0;
       pos.y = ground->get_y(pos.x, pos.z);
 
       auto n = ground->get_n(pos.x, pos.z);
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
-      if (pos.y > -2.5 && pos.y < 2.0)
+      if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
       {
-        pos += n * 1.0f;
         const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
         const float s = sqrt((1.0f + theta) * 2.0f);
         const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
@@ -118,25 +120,48 @@ int main()
       }
       else
       {
-        pos -= n * 1.0f;
-        n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
-        const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-        const float s = sqrt((1.0f + theta) * 2.0f);
-        const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-        auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-        props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
+        bool gen_tree = false;
+        if (random(rd) < 0.2)
+          gen_tree = true;
+
+        if (!gen_tree)
+        {
+          pos -= n * 1.0f;
+          n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
+          const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+          const float s = sqrt((1.0f + theta) * 2.0f);
+          const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+          auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+          props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
+          if (random(rd) < 0.4)
+          {
+            gen_tree = true;
+            pos.x += (random(rd) - 0.5) * 10.0;
+            pos.z += (random(rd) - 0.5) * 10.0;
+            pos.y = ground->get_y(pos.x, pos.z);
+          }
+        }
+
+        if (gen_tree)
+        {
+          const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+          const float s = sqrt((1.0f + theta) * 2.0f);
+          const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+          auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+          props.push_back(Prop { PropType::Bush, pos, rot, glm::vec3 { 1.0f } });
+        }
       }
     }
 
   Sky sky(sky_color);
 
-  const double FAR_PLANE = 500.0;
+  const double FAR_PLANE = 400.0;
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
       ZD::Camera::Fov::from_degrees(100.0),
       WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(0.05, FAR_PLANE + 10.0)),
+      ZD::Camera::ClippingPlane(1.0, FAR_PLANE + 10.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   ZD::View view_bg(
@@ -154,23 +179,22 @@ int main()
   window->get_screens().back()->flip_y = true;
 
   auto background_fb = renderer.generate_framebuffer(
-    WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
   window->add_screen(std::make_shared<ZD::Screen_GL>(background_fb.texture, 0, 0));
   window->get_screens().back()->flip_y = true;
 
   auto main_fb = renderer.generate_framebuffer(
-    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
+    WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
   window->add_screen(std::make_shared<ZD::Screen_GL>(main_fb.texture));
   window->get_screens().back()->flip_y = true;
 
   printf("Ready.\n");
-
   while (window->is_open())
   {
     renderer.clear();
     glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 1.0);
-    renderer.enable_depth_test(GL_LESS);
-    renderer.enable_cull_face();
+    renderer.enable_depth_test(GL_LEQUAL);
+    //renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
 
@@ -185,8 +209,7 @@ int main()
     static bool camera_noclip = false;
     if (ImGui::Begin("Camera"))
     {
-      ImGui::Text(
-        "Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
+      ImGui::Text("Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
       if (ImGui::Button("Set origin to center"))
         camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
 
@@ -250,14 +273,14 @@ int main()
     for (auto &&prop : props)
     {
       // non transparent
-      if (prop.type != PropType::Tree)
+      if (!prop.has_transulency)
         prop.draw(view);
     }
     ground->draw(view);
     for (auto &&prop : props)
     {
       // transparent
-      if (prop.type == PropType::Tree)
+      if (prop.has_transulency)
         prop.draw(view);
     }
 
@@ -278,7 +301,7 @@ int main()
     renderer.unbind_framebuffer();
     glClearColor(0.0, 0.0, 0.0, 0.0);
     renderer.disable_depth_test();
-    renderer.disable_cull_face();
+    //renderer.disable_cull_face();
 
     renderer.render_screens();
     imgui_render();

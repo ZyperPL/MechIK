@@ -9,7 +9,8 @@ enum class PropType
 {
   Tree,
   House,
-  Rock
+  Rock,
+  Bush
 };
 
 class Prop : public ZD::Entity
@@ -19,7 +20,7 @@ public:
   void draw(const ZD::View &view);
 
   const PropType type;
-
+  bool has_transulency { false };
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
   static std::shared_ptr<ZD::ShaderProgram> default_shader;

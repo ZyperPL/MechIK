@@ -12,6 +12,10 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
   const ZD::TextureParameters texture_parameters {
     .generate_mipmap = true, .mag_filter = GL_NEAREST, .min_filter = GL_LINEAR_MIPMAP_NEAREST, .wrap_mode = GL_REPEAT
   };
+  
+  const ZD::TextureParameters translucent_texture_parameters {
+    .generate_mipmap = false, .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR, .wrap_mode = GL_REPEAT
+  };
   switch (type)
   {
     case PropType::Tree:
@@ -21,10 +25,11 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
       auto texture = ZD::Texture::load("textures/huge_tree_diffuse.tga", texture_parameters);
       add_texture(texture);
 
-      texture = ZD::Texture::load("textures/huge_tree_translucency.tga", texture_parameters);
+      texture = ZD::Texture::load("textures/huge_tree_translucency.tga", translucent_texture_parameters);
       texture->set_name("sampler_translucency");
       add_texture(std::move(texture));
       add_model(std::move(model));
+      has_transulency = true;
     }
     break;
     case PropType::Rock:
@@ -37,8 +42,21 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
       texture->set_name("sampler_normal");
       add_texture(std::move(texture));
       add_model(std::move(model));
-      //this->rotation.y += fmodf((float)(rand()%300), 7.0f);
       this->scale *= 0.5f + fmodf((float)(rand() % 130), 3.0f);
+    }
+    break;
+    case PropType::Bush:
+    {
+      auto model = ZD::Model::load("models/bush_05.obj");
+
+      auto texture = ZD::Texture::load("textures/bush_05_diffuse.tga", texture_parameters);
+      add_texture(texture);
+
+      texture = ZD::Texture::load("textures/bush_05_translucency.tga", translucent_texture_parameters);
+      texture->set_name("sampler_translucency");
+      add_texture(std::move(texture));
+      add_model(std::move(model));
+      has_transulency = true;
     }
     break;
 
@@ -58,10 +76,9 @@ void Prop::draw(const ZD::View &view)
 {
   auto &shader = this->shader ? *this->shader : *Prop::default_shader;
   shader.use();
-  switch (type)
-  {
-    case PropType::Tree: shader.set_uniform<bool>("has_translucency", true); break;
-    default: break;
-  }
+
+  if (has_transulency)
+    shader.set_uniform<bool>("has_translucency", has_transulency);
+
   Entity::draw(shader, view);
 }

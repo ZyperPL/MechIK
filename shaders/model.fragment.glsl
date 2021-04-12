@@ -45,7 +45,7 @@ void main()
     tl = clamp(tl, 0.0, 2.0);
   }
   
-  fragColor.rgb *= clamp(0.6 + light + tl, 0.0, 2.0);
+  fragColor.rgb *= clamp(0.8 + light + tl, 0.0, 2.0);
   
   float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
   fragColor.rgb += noise(uv * 12334.5232) * noise_value;
