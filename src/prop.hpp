@@ -10,7 +10,8 @@ enum class PropType
   Tree,
   House,
   Rock,
-  Bush
+  Bush1,
+  Bush2
 };
 
 class Prop : public ZD::Entity

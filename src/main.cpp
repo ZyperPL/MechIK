@@ -120,11 +120,11 @@ int main()
       }
       else
       {
-        bool gen_tree = false;
-        if (random(rd) < 0.2)
-          gen_tree = true;
+        bool gen_bush = false;
+        if (random(rd) < 0.3)
+          gen_bush = true;
 
-        if (!gen_tree)
+        if (!gen_bush)
         {
           pos -= n * 1.0f;
           n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
@@ -133,22 +133,28 @@ int main()
           const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
           props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
-          if (random(rd) < 0.4)
+          if (random(rd) < 0.7)
           {
-            gen_tree = true;
+            gen_bush = true;
             pos.x += (random(rd) - 0.5) * 10.0;
             pos.z += (random(rd) - 0.5) * 10.0;
             pos.y = ground->get_y(pos.x, pos.z);
           }
         }
 
-        if (gen_tree)
+        if (gen_bush)
         {
           const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           const float s = sqrt((1.0f + theta) * 2.0f);
           const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-          props.push_back(Prop { PropType::Bush, pos, rot, glm::vec3 { 1.0f } });
+          if (random(rd) < 0.7)
+          {
+            props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
+          } else
+          {
+            props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
+          }
         }
       }
     }

@@ -45,7 +45,7 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
       this->scale *= 0.5f + fmodf((float)(rand() % 130), 3.0f);
     }
     break;
-    case PropType::Bush:
+    case PropType::Bush1:
     {
       auto model = ZD::Model::load("models/bush_05.obj");
 
@@ -53,6 +53,20 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
       add_texture(texture);
 
       texture = ZD::Texture::load("textures/bush_05_translucency.tga", translucent_texture_parameters);
+      texture->set_name("sampler_translucency");
+      add_texture(std::move(texture));
+      add_model(std::move(model));
+      has_transulency = true;
+    }
+    break;
+    case PropType::Bush2:
+    {
+      auto model = ZD::Model::load("models/bush_03.obj");
+
+      auto texture = ZD::Texture::load("textures/bush_03_diffuse.tga", texture_parameters);
+      add_texture(texture);
+
+      texture = ZD::Texture::load("textures/bush_03_translucency.tga", translucent_texture_parameters);
       texture->set_name("sampler_translucency");
       add_texture(std::move(texture));
       add_model(std::move(model));
