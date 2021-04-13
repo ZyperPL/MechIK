@@ -3,6 +3,8 @@
 
 #include "ZD/Image.hpp"
 
+#include "world.hpp"
+
 std::shared_ptr<ZD::ShaderProgram> Prop::default_shader;
 
 Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
@@ -86,13 +88,17 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
   }
 }
 
-void Prop::draw(const ZD::View &view)
+void Prop::draw(const ZD::View &view, const World &world)
 {
   auto &shader = this->shader ? *this->shader : *Prop::default_shader;
   shader.use();
 
   if (has_transulency)
     shader.set_uniform<bool>("has_translucency", has_transulency);
+  
+  shader.set_uniform<glm::vec3>("fog_color", world.sky_color_vec());
+  shader.set_uniform<float>("fog_scattering", 1.3);
+  shader.set_uniform<float>("fog_extinction", 0.001);
 
   Entity::draw(shader, view);
 }

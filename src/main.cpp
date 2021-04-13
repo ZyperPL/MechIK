@@ -21,6 +21,8 @@
 
 #include "debug.hpp"
 
+#include "world.hpp"
+
 #define WINDOW_WIDTH  1920.0
 #define WINDOW_HEIGHT 1080.0
 
@@ -77,36 +79,36 @@ void imgui_cleanup()
 
 int main()
 {
-  const ZD::Color sky_color { 225, 240, 255 };
-
   ZD::OGLRenderer renderer;
   renderer.set_multisampling(1);
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
   renderer.enable_blend();
-  renderer.clear_background_color(sky_color);
+
+  std::unique_ptr<World> world = std::make_unique<World>();
+  renderer.clear_background_color(world->sky_color);
 
   Debug::init();
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
   ImGuiIO &imgui_io = ImGui::GetIO();
 
-  auto ground = std::make_shared<Ground>();
-  ground->set_fog_color(sky_color);
+  world->ground = std::make_unique<Ground>();
+  world->ground->set_fog_color(world->sky_color);
 
   static std::random_device rd;
   std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
   auto mech = std::make_shared<Mech>(glm::vec3 { 4.0, 8.0, 3.0 });
-  std::vector<Prop> props;
+  
   for (ssize_t i = -5; i < 6; i++)
     for (ssize_t j = -5; j < 6; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * 42.0 + (random(rd)-0.5) * 15.0;
-      pos.z += j * 44.0 + (random(rd)-0.5) * 21.0;
-      pos.y = ground->get_y(pos.x, pos.z);
+      pos.x += i * 42.0 + (random(rd) - 0.5) * 15.0;
+      pos.z += j * 44.0 + (random(rd) - 0.5) * 21.0;
+      pos.y = world->ground->get_y(pos.x, pos.z);
 
-      auto n = ground->get_n(pos.x, pos.z);
+      auto n = world->ground->get_n(pos.x, pos.z);
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
@@ -116,7 +118,7 @@ int main()
         const float s = sqrt((1.0f + theta) * 2.0f);
         const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
         auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-        props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
+        world->props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
       }
       else
       {
@@ -132,13 +134,13 @@ int main()
           const float s = sqrt((1.0f + theta) * 2.0f);
           const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-          props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
+          world->props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
           if (random(rd) < 0.7)
           {
             gen_bush = true;
             pos.x += (random(rd) - 0.5) * 10.0;
             pos.z += (random(rd) - 0.5) * 10.0;
-            pos.y = ground->get_y(pos.x, pos.z);
+            pos.y = world->ground->get_y(pos.x, pos.z);
           }
         }
 
@@ -150,16 +152,17 @@ int main()
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
           if (random(rd) < 0.7)
           {
-            props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
-          } else
+            world->props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
+          }
+          else
           {
-            props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
+            world->props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
           }
         }
       }
     }
 
-  Sky sky(sky_color);
+  Sky sky(world->sky_color);
 
   const double FAR_PLANE = 400.0;
 
@@ -167,14 +170,14 @@ int main()
     ZD::Camera::PerspectiveParameters(
       ZD::Camera::Fov::from_degrees(100.0),
       WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(1.0, FAR_PLANE + 10.0)),
+      ZD::Camera::ClippingPlane(1.0, FAR_PLANE + 40.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   ZD::View view_bg(
     ZD::Camera::PerspectiveParameters(
       ZD::Camera::Fov::from_degrees(100.0),
       WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(FAR_PLANE - 10.0, 2800.0)),
+      ZD::Camera::ClippingPlane(FAR_PLANE - 40.0, 2400.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   glm::vec3 camera_position { 0.0, 2.0, 0.0 };
@@ -198,11 +201,12 @@ int main()
   while (window->is_open())
   {
     renderer.clear();
-    glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 1.0);
+    glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 1.0);
     renderer.enable_depth_test(GL_LEQUAL);
     //renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
+    mech->update(*world);
 
     if (ImGui::Begin("Debug options"))
     {
@@ -248,7 +252,7 @@ int main()
 
     if (!camera_noclip)
     {
-      const double camera_min_y = ground->get_y(camera_position.x, camera_position.z);
+      const double camera_min_y = world->ground->get_y(camera_position.x, camera_position.z);
       if (camera_position.y - 5.0f < camera_min_y)
       {
         camera_position.y = camera_min_y + 5.0f;
@@ -262,32 +266,32 @@ int main()
     view_bg.set_target(mech->get_position());
 
     renderer.bind_framebuffer(sky_fb);
-    glClearColor(sky_color.red_float(), sky_color.green_float(), sky_color.blue_float(), 0.0);
+    glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 0.0);
     sky.render(view_bg);
     sky.render(view);
     renderer.unbind_framebuffer();
 
     renderer.bind_framebuffer(background_fb);
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    ground->draw(view_bg);
-    mech->render(view_bg);
+    world->ground->draw(view_bg);
+    mech->render(view_bg, *world);
     renderer.unbind_framebuffer();
 
     renderer.bind_framebuffer(main_fb);
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    mech->render(view);
-    for (auto &&prop : props)
+    mech->render(view, *world);
+    for (auto &&prop : world->props)
     {
       // non transparent
       if (!prop.has_transulency)
-        prop.draw(view);
+        prop.draw(view, *world);
     }
-    ground->draw(view);
-    for (auto &&prop : props)
+    world->ground->draw(view);
+    for (auto &&prop : world->props)
     {
       // transparent
       if (prop.has_transulency)
-        prop.draw(view);
+        prop.draw(view, *world);
     }
 
     if (!imgui_io.WantCaptureMouse)
@@ -295,7 +299,7 @@ int main()
       if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
       {
         const glm::vec3 new_pos { camera_position.x,
-                                  ground->get_y(camera_position.x, camera_position.z) + 5.0f,
+                                  world->ground->get_y(camera_position.x, camera_position.z) + 5.0f,
                                   camera_position.z };
         mech->set_position(new_pos);
         camera_position.x -= 4.0f;

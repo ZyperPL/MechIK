@@ -2,7 +2,8 @@
 
 in vec2 uv;
 in float light;
-in float dst_to_camera;
+in vec4 position_model_space;
+in vec4 position_camera_space;
 
 float rand(vec2 n) { 
 	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
@@ -23,6 +24,10 @@ uniform sampler2D sampler;
 uniform bool has_translucency = false;
 uniform sampler2D sampler_translucency;
 
+uniform vec3 fog_color = vec3(0.0, 0.0, 1.0);
+uniform float fog_scattering = 1.0;
+uniform float fog_extinction = 0.0001;
+
 out vec4 fragColor;
 void main()
 {
@@ -30,7 +35,9 @@ void main()
   if (!has_translucency && fragColor.a < 0.5)
     discard;
   
-  fragColor += (texture(sampler, uv / (dst_to_camera / 2.0)) / 32.0);
+  float dst = length(position_camera_space);
+  
+  fragColor += (texture(sampler, uv / (dst / 2.0)) / 32.0);
   
   float tl = 0.0;
   if (has_translucency)
@@ -47,6 +54,12 @@ void main()
   
   fragColor.rgb *= clamp(0.8 + light + tl, 0.0, 2.0);
   
-  float noise_value = clamp(0.1 / dst_to_camera, 0.0, 1.0);
+  float noise_value = clamp(0.1 / dst, 0.0, 1.0);
   fragColor.rgb += noise(uv * 12334.5232) * noise_value;
+  
+  float fog_alpha = fog_scattering * exp(-position_model_space.y * fog_extinction) *
+                    (1.0f - exp(-dst * normalize(position_camera_space).y * fog_extinction)) /
+                    normalize(position_camera_space).y;
+
+  fragColor.rgb = mix(fragColor.rgb, fog_color, clamp(fog_alpha, 0.0, 0.99));
 }

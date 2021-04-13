@@ -3,6 +3,8 @@
 #include "ZD/3rd/glm/gtx/rotate_vector.hpp"
 #include "ZD/3rd/glm/ext/quaternion_trigonometric.hpp"
 
+#include "world.hpp"
+
 LegPart::LegPart(const size_t part_index)
 : ZD::Entity {}
 , part_index { part_index }
@@ -55,14 +57,8 @@ Mech::Mech(glm::vec3 position)
              .compile();
 }
 
-void Mech::render(ZD::View &view)
+void Mech::update([[maybe_unused]] const World &world)
 {
-  shader->use();
-  body->set_position(get_position());
-  body->set_rotation(get_rotation());
-  body->set_scale(get_scale());
-  body->draw(*shader, view);
-
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
     auto &leg_b = legs_b[i];
@@ -82,9 +78,21 @@ void Mech::render(ZD::View &view)
     const glm::quat e_rotate = m_rotate * leg_e->target_rotation;
     leg_e->set_position(e_translate);
     leg_e->set_rotation(e_rotate);
+  }
+}
 
-    leg_b->draw(*shader, view);
-    leg_m->draw(*shader, view);
-    leg_e->draw(*shader, view);
+void Mech::render(ZD::View &view, [[maybe_unused]] const World &world)
+{
+  shader->use();
+  body->set_position(get_position());
+  body->set_rotation(get_rotation());
+  body->set_scale(get_scale());
+  body->draw(*shader, view);
+
+  for (size_t i = 0; i < legs_b.size(); ++i)
+  {
+    legs_b[i]->draw(*shader, view);
+    legs_m[i]->draw(*shader, view);
+    legs_e[i]->draw(*shader, view);
   }
 }

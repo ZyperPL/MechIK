@@ -5,6 +5,8 @@
 #include "ZD/Entity.hpp"
 #include "ZD/Image.hpp"
 
+struct World;
+
 enum class PropType
 {
   Tree,
@@ -18,7 +20,7 @@ class Prop : public ZD::Entity
 {
 public:
   Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
-  void draw(const ZD::View &view);
+  void draw(const ZD::View &view, const World &world);
 
   const PropType type;
   bool has_transulency { false };

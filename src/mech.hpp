@@ -11,6 +11,8 @@
 #include "ZD/Texture.hpp"
 #include "ZD/View.hpp"
 
+struct World;
+
 struct LegPart : public ZD::Entity
 {
   LegPart(const size_t part_index);
@@ -24,7 +26,8 @@ class Mech : public ZD::Entity
 {
 public:
   Mech(glm::vec3 position);
-  void render(ZD::View &view);
+  void update(const World &world);
+  void render(ZD::View &view, const World &world);
 
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
