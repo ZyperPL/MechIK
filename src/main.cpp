@@ -14,6 +14,7 @@
 #include "prop.hpp"
 #include "ground.hpp"
 #include "sky.hpp"
+#include "config.hpp"
 
 #include "3rd/imgui/imgui.h"
 #include "3rd/imgui/imgui_impl_glfw.h"
@@ -88,6 +89,8 @@ int main()
   renderer.clear_background_color(world->sky_color);
 
   Debug::init();
+
+  std::shared_ptr<Config> cfg = std::make_shared<Config>("config.ini");
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
   ImGuiIO &imgui_io = ImGui::GetIO();
