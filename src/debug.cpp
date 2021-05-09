@@ -3,7 +3,9 @@
 #include "mech.hpp"
 
 std::vector<std::pair<glm::vec3, glm::vec3>> Debug::lines;
+std::vector<glm::vec3> Debug::cubes;
 GLuint Debug::buffer = 0;
+GLuint Debug::cube_buffer = 0;
 std::shared_ptr<ZD::ShaderProgram> Debug::shader;
 std::unordered_map<std::string, bool> Debug::option;
 
@@ -78,42 +80,42 @@ void Debug::mech_properties(Mech &mech)
       
       ImGui::Text("Beginning ");
       ImGui::SameLine();
-      euler = glm::eulerAngles(glm::normalize(b.target_rotation));
+      euler = glm::eulerAngles(glm::normalize(b.get_rotation()));
       ImGui::Columns(3);
       ImGui::SliderAngle("X", &euler.x);
       ImGui::NextColumn();
       ImGui::SliderAngle("Y", &euler.y);
       ImGui::NextColumn();
       ImGui::SliderAngle("Z", &euler.z);
-      b.target_rotation = glm::quat(euler);
+      b.set_rotation(glm::quat(euler));
       ImGui::Columns();
       
       ImGui::PushID(i * 1000 + 1);
       
       ImGui::Text("Middle   ");
       ImGui::SameLine();
-      euler = glm::eulerAngles(glm::normalize(m.target_rotation));
+      euler = glm::eulerAngles(glm::normalize(m.get_rotation()));
       ImGui::Columns(3);
       ImGui::SliderAngle("X", &euler.x);
       ImGui::NextColumn();
       ImGui::SliderAngle("Y", &euler.y);
       ImGui::NextColumn();
       ImGui::SliderAngle("Z", &euler.z);
-      m.target_rotation = glm::quat(euler);
+      m.set_rotation(glm::quat(euler));
       ImGui::Columns();
       
       ImGui::PushID(i * 1000 + 2);
       
       ImGui::Text("End      ");
       ImGui::SameLine();
-      euler = glm::eulerAngles(glm::normalize(e.target_rotation));
+      euler = glm::eulerAngles(glm::normalize(e.get_rotation()));
       ImGui::Columns(3);
       ImGui::SliderAngle("X", &euler.x);
       ImGui::NextColumn();
       ImGui::SliderAngle("Y", &euler.y);
       ImGui::NextColumn();
       ImGui::SliderAngle("Z", &euler.z);
-      e.target_rotation = glm::quat(euler);
+      e.set_rotation(glm::quat(euler));
       ImGui::Columns();
 
       ImGui::Separator();
@@ -122,5 +124,14 @@ void Debug::mech_properties(Mech &mech)
       ImGui::PopID();
       ImGui::PopID();
     }
+  }
+}
+
+void Debug::mech_debug([[maybe_unused]] Mech &mech)
+{
+  if (ImGui::Button("Show leg targets"))
+  {
+
+    generate_cube_buffer();
   }
 }

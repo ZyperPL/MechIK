@@ -20,6 +20,8 @@ float noise(vec2 p){
 	return res*res;
 }
 
+uniform bool debug = false;
+
 uniform sampler2D sampler;
 uniform bool has_translucency = false;
 uniform sampler2D sampler_translucency;
@@ -31,6 +33,12 @@ uniform float fog_extinction = 0.0001;
 out vec4 fragColor;
 void main()
 {
+  if (debug)
+  {
+    fragColor = vec4(1.0, 0.0, 0.0, 0.9);
+    return;
+  }
+
   fragColor = texture(sampler, uv);
   if (!has_translucency && fragColor.a < 0.5)
     discard;

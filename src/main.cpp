@@ -231,7 +231,10 @@ int main()
     ImGui::End();
 
     if (ImGui::Begin("Mech"))
+    {
       Debug::mech_properties(*mech);
+      Debug::mech_debug(*mech);
+    }
     ImGui::End();
 
     float CAMERA_STEP_SIZE = 1.0;
@@ -311,6 +314,7 @@ int main()
     }
 
     Debug::draw_lines(view);
+    Debug::draw_cubes(view);
     renderer.unbind_framebuffer();
     glClearColor(0.0, 0.0, 0.0, 0.0);
     renderer.disable_depth_test();
