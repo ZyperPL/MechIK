@@ -19,7 +19,7 @@ struct LegPart : public ZD::Entity
   virtual ~LegPart() = default;
 
   const size_t part_index;
-  glm::quat target_rotation { 0.0f, 0.0f, 0.0f, 0.0f };
+  glm::vec3 target_position { 0.0f, 0.0f, 0.0f };
 };
 
 class Mech : public ZD::Entity

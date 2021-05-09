@@ -127,11 +127,14 @@ void Debug::mech_properties(Mech &mech)
   }
 }
 
-void Debug::mech_debug([[maybe_unused]] Mech &mech)
+void Debug::mech_debug(Mech &mech)
 {
   if (ImGui::Button("Show leg targets"))
   {
-
+    for (const auto &leg_e : mech.legs_e)
+    {
+      add_cube(leg_e->target_position);
+    }
     generate_cube_buffer();
   }
 }

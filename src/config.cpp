@@ -67,10 +67,10 @@ Config::Config(const std::string file_name)
           mode = Section;
           continue;
         }
-        
+
         mode = Key;
         key += ch;
-      break;
+        break;
       case Section:
         if (isspace(ch))
           continue;

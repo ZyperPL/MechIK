@@ -43,8 +43,8 @@ Mech::Mech(glm::vec3 position)
   body->add_model(body_model);
   body->set_position(position);
 
-  const size_t LEG_PAIRS = 2;
-  for (size_t i = 0; i < LEG_PAIRS * 2; i++)
+  const size_t LEGS_NUM = 4;
+  for (size_t i = 0; i < LEGS_NUM; i++)
   {
     legs_b.push_back(std::make_unique<LegPart>(0));
     legs_m.push_back(std::make_unique<LegPart>(1));
@@ -59,25 +59,42 @@ Mech::Mech(glm::vec3 position)
 
 void Mech::update([[maybe_unused]] const World &world)
 {
+  const float angle_step = 2.0f*M_PI / static_cast<float>(legs_b.size());
+
+  for (size_t i = 0; i < legs_b.size(); ++i)
+  {
+    auto &leg_e = legs_e[i];
+
+    const float angle = angle_step / 2.0f + i * angle_step;
+    
+    const glm::quat target_rotation = glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    const auto target_pos = position + target_rotation * glm::vec3(4.0f, 0.0f, 0.0f);
+    leg_e->target_position.x = target_pos.x;
+    leg_e->target_position.y = world.ground->get_y(target_pos.x, target_pos.z);
+    leg_e->target_position.z = target_pos.z;
+
+    leg_e->set_rotation(target_rotation);
+  }
+
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
     auto &leg_b = legs_b[i];
     const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -1.0f, 0.0f };
-    const glm::quat b_rotate = rotation * leg_b->target_rotation;
+    const glm::quat b_rotate = rotation * leg_b->get_rotation();
     leg_b->set_position(b_translate);
     leg_b->set_rotation(b_rotate);
 
     auto &leg_m = legs_m[i];
     const glm::vec3 m_translate = b_translate + b_rotate * glm::vec3 { 1.0f, 0.0f, 0.0f };
-    const glm::quat m_rotate = b_rotate * leg_m->target_rotation;
+    const glm::quat m_rotate = b_rotate * leg_m->get_rotation();
     leg_m->set_position(m_translate);
     leg_m->set_rotation(m_rotate);
 
     auto &leg_e = legs_e[i];
     const glm::vec3 e_translate = m_translate + m_rotate * glm::vec3 { 1.0f, 0.0f, 0.0f };
-    const glm::quat e_rotate = m_rotate * leg_e->target_rotation;
+    //const glm::quat e_rotate = m_rotate * leg_e->get_rotation();
     leg_e->set_position(e_translate);
-    leg_e->set_rotation(e_rotate);
+    //leg_e->set_rotation(e_rotate);//TODO
   }
 }
 
