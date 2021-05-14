@@ -1,3 +1,4 @@
+#include <map>
 #include <memory>
 #include <random>
 
@@ -15,6 +16,7 @@
 #include "ground.hpp"
 #include "sky.hpp"
 #include "config.hpp"
+#include "gridmap.hpp"
 
 #include "3rd/imgui/imgui.h"
 #include "3rd/imgui/imgui_impl_glfw.h"
@@ -102,7 +104,9 @@ int main()
   std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
   auto mech = std::make_shared<Mech>(glm::vec3 { 4.0, 8.0, 3.0 });
-  
+
+  GridMap grid_map;
+
   for (ssize_t i = -5; i < 6; i++)
     for (ssize_t j = -5; j < 6; j++)
     {
@@ -111,7 +115,10 @@ int main()
       pos.z += j * 44.0 + (random(rd) - 0.5) * 21.0;
       pos.y = world->ground->get_y(pos.x, pos.z);
 
+      auto map_node = grid_map.add(i, j);
+
       auto n = world->ground->get_n(pos.x, pos.z);
+      std::optional<PropType> added_prop;
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
@@ -122,6 +129,7 @@ int main()
         const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
         auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
         world->props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
+        added_prop = PropType::Rock;
       }
       else
       {
@@ -138,6 +146,7 @@ int main()
           const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
           world->props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
+          added_prop = PropType::Tree;
           if (random(rd) < 0.7)
           {
             gen_bush = true;
@@ -156,13 +165,20 @@ int main()
           if (random(rd) < 0.7)
           {
             world->props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
+            if (!added_prop)
+              added_prop = PropType::Bush2;
           }
           else
           {
             world->props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
+            if (!added_prop)
+              added_prop = PropType::Bush1;
           }
         }
       }
+
+      map_node.cost = GridMap::Node::calculate_cost(n, added_prop);
+      printf("Node %zd,%zd: %12.6f\n", i, j, map_node.cost);
     }
 
   Sky sky(world->sky_color);
