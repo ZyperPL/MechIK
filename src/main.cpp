@@ -108,14 +108,14 @@ int main()
   GridMap grid_map;
 
   const float X_SPACING = 8.0f;
-  const float Y_SPACING = 10.0f;
+  const float Y_SPACING = 9.0f;
 
   for (ssize_t i = -60; i < 60; i++)
     for (ssize_t j = -60; j < 60; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * X_SPACING + (random(rd) - 0.5) * (X_SPACING * 2.0f);
-      pos.z += j * Y_SPACING + (random(rd) - 0.5) * (Y_SPACING * 2.0f);
+      pos.x += i * X_SPACING + (random(rd) - 0.5) * X_SPACING / 2.0f;
+      pos.z += j * Y_SPACING + (random(rd) - 0.5) * Y_SPACING / 2.0f;
       pos.y = world->ground->get_y(pos.x, pos.z);
 
       auto map_node = grid_map.add(i, j);
@@ -125,7 +125,7 @@ int main()
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
-      if (i % 2 == 0 && j % 3 == 0 && random(rd) > 0.8)
+      if (i % 3 == 0 && j % 3 == 0 && random(rd) > 0.8)
       {
         if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
         {
@@ -187,18 +187,36 @@ int main()
       }
 
       map_node.cost = GridMap::Node::calculate_cost(n, added_prop);
-      printf("Node %zd,%zd: %12.6f\n", i, j, map_node.cost);
+      if (map_node.cost > 0.9)
+      {
+        // remove all radius
+        const int REMOVE_R = 1;
+        for (int iy = -REMOVE_R; iy <= REMOVE_R; ++iy)
+        {
+          for (int ix = -REMOVE_R; ix <= REMOVE_R; ++ix)
+          {
+            grid_map.nodes.erase({ i + ix, j + iy });
+          }
+        }
+      }
     }
+
+  const auto path = grid_map.get_path(-5, -35, 45, 23);
+  for (const auto &idx : path)
+  {
+    printf("%d,%d\n", idx.first, idx.second);
+    const float x = idx.first * X_SPACING;
+    const float z = idx.second * Y_SPACING;
+    const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
+    Debug::add_cube(pos);
+  }
 
   Sky sky(world->sky_color);
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(90.0),
-      WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(0.1, 800.0)),
+      ZD::Camera::Fov::from_degrees(90.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.1, 800.0)),
     glm::vec3(0.0, 0.0, 0.0));
-
 
   glm::vec3 camera_position { 0.0, 2.0, 0.0 };
 
@@ -218,6 +236,18 @@ int main()
       ImGui::Text("Options available: %lu", Debug::option.size());
       for (auto &&option : Debug::option)
         ImGui::Checkbox(option.first.data(), &option.second);
+
+      if (ImGui::Button("Show graph grid"))
+      {
+        for (auto &&idx_node : grid_map.nodes)
+        {
+          const float x = idx_node.first.first * X_SPACING;
+          const float z = idx_node.first.second * Y_SPACING;
+
+          const glm::vec3 pos { x, world->ground->get_y(x, z), z };
+          Debug::add_cube(pos);
+        }
+      }
     }
     ImGui::End();
 

@@ -60,7 +60,7 @@ struct Debug
   static void generate_cube_buffer()
   {
     std::vector<GLfloat> data;
-    const float U = 0.3f;
+    const float U = 0.9f;
     data.push_back(-U);
     data.push_back(U);
     data.push_back(-U);

@@ -11,6 +11,8 @@ class GridMap
 public:
   struct Node
   {
+    const int x;
+    const int y;
     double cost { 0.0 };
 
     static double prop_cost(PropType &type)
@@ -30,12 +32,14 @@ public:
     {
       const double occupied_factor = occupied.has_value() ? prop_cost(occupied.value()) : 0.0;
       const double normal_cost = 1.0 - fabs(glm::dot(normal, glm::vec3 { 0.0, 1.0, 0.0 }));
-      const double normal_factor = 2.0;
+      const double normal_factor = 2.7;
       return std::min(normal_cost * normal_factor + occupied_factor, 1.0);
     }
   };
 
-  Node &add(int i, int j) { return nodes.insert({ std::pair { i, j }, Node() }).first->second; }
+  Node &add(int x, int y) { return nodes.insert({ std::pair { x, y }, Node { x, y } }).first->second; }
 
   std::map<std::pair<int, int>, Node> nodes;
+
+  std::vector<std::pair<int, int> > get_path(int start_x, int start_y, int end_x, int end_y) const;
 };
