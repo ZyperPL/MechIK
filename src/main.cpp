@@ -107,8 +107,8 @@ int main()
 
   GridMap grid_map;
 
-  for (ssize_t i = -5; i < 6; i++)
-    for (ssize_t j = -5; j < 6; j++)
+  for (ssize_t i = -20; i < 20; i++)
+    for (ssize_t j = -20; j < 20; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * 42.0 + (random(rd) - 0.5) * 15.0;
