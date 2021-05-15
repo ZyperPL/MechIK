@@ -11,16 +11,24 @@ class GridMap
 public:
   struct Node
   {
-    Node *west { nullptr };
-    Node *north { nullptr };
-    Node *east { nullptr };
-    Node *south { nullptr };
-
     double cost { 0.0 };
+
+    static double prop_cost(PropType &type)
+    {
+      switch (type)
+      {
+        case PropType::Bush1:
+        case PropType::Bush2: return 0.4;
+        case PropType::House: return 1.0;
+        case PropType::Rock: return 1.0;
+        case PropType::Tree: return 1.0;
+      }
+      return 1.0;
+    }
 
     static double calculate_cost(const glm::vec3 normal, std::optional<PropType> occupied)
     {
-      const double occupied_factor = occupied.has_value() ? 1.0 : 0.0;
+      const double occupied_factor = occupied.has_value() ? prop_cost(occupied.value()) : 0.0;
       const double normal_cost = 1.0 - fabs(glm::dot(normal, glm::vec3 { 0.0, 1.0, 0.0 }));
       const double normal_factor = 2.0;
       return std::min(normal_cost * normal_factor + occupied_factor, 1.0);
