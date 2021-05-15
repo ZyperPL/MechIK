@@ -183,38 +183,15 @@ int main()
 
   Sky sky(world->sky_color);
 
-  const double FAR_PLANE = 400.0;
-
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
       ZD::Camera::Fov::from_degrees(100.0),
       WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(1.0, FAR_PLANE + 40.0)),
+      ZD::Camera::ClippingPlane(1.0, 1800.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
-  ZD::View view_bg(
-    ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(100.0),
-      WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(FAR_PLANE - 40.0, 2400.0)),
-    glm::vec3(0.0, 0.0, 0.0));
 
   glm::vec3 camera_position { 0.0, 2.0, 0.0 };
-
-  auto sky_fb = renderer.generate_framebuffer(
-    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
-  window->add_screen(std::make_shared<ZD::Screen_GL>(sky_fb.texture, 0, 0));
-  window->get_screens().back()->flip_y = true;
-
-  auto background_fb = renderer.generate_framebuffer(
-    WINDOW_WIDTH, WINDOW_HEIGHT, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
-  window->add_screen(std::make_shared<ZD::Screen_GL>(background_fb.texture, 0, 0));
-  window->get_screens().back()->flip_y = true;
-
-  auto main_fb = renderer.generate_framebuffer(
-    WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, ZD::TextureParameters { .mag_filter = GL_LINEAR, .min_filter = GL_LINEAR });
-  window->add_screen(std::make_shared<ZD::Screen_GL>(main_fb.texture));
-  window->get_screens().back()->flip_y = true;
 
   printf("Ready.\n");
   while (window->is_open())
@@ -222,7 +199,7 @@ int main()
     renderer.clear();
     glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 1.0);
     renderer.enable_depth_test(GL_LEQUAL);
-    //renderer.enable_cull_face();
+    renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
     mech->update(*world);
@@ -284,23 +261,8 @@ int main()
     view.set_position(camera_position);
     view.set_target(mech->get_position());
 
-    view_bg.set_position(camera_position);
-    view_bg.set_target(mech->get_position());
-
-    renderer.bind_framebuffer(sky_fb);
-    glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 0.0);
-    sky.render(view_bg);
     sky.render(view);
-    renderer.unbind_framebuffer();
 
-    renderer.bind_framebuffer(background_fb);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    world->ground->draw(view_bg);
-    mech->render(view_bg, *world);
-    renderer.unbind_framebuffer();
-
-    renderer.bind_framebuffer(main_fb);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
     mech->render(view, *world);
     for (auto &&prop : world->props)
     {
@@ -331,10 +293,6 @@ int main()
 
     Debug::draw_lines(view);
     Debug::draw_cubes(view);
-    renderer.unbind_framebuffer();
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    renderer.disable_depth_test();
-    //renderer.disable_cull_face();
 
     renderer.render_screens();
     imgui_render();
