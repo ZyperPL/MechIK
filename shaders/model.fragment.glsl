@@ -44,8 +44,11 @@ void main()
     discard;
   
   float dst = length(position_camera_space);
-  
-  fragColor += (texture(sampler, uv / (dst / 2.0)) / 32.0);
+
+  if (dst < 100.0)
+  {
+    fragColor += (texture(sampler, uv / (dst / 2.0)) / 32.0);
+  }
   
   float tl = 0.0;
   if (has_translucency)
@@ -54,7 +57,7 @@ void main()
     tl = translucency.r * translucency.g * translucency.b;
     fragColor.a -= (tl / 12.0);
 
-    if (fragColor.a < 0.8)
+    if (fragColor.a < 0.6)
       discard;
 
     tl = clamp(tl, 0.0, 2.0);
@@ -62,8 +65,11 @@ void main()
   
   fragColor.rgb *= clamp(0.8 + light + tl, 0.0, 2.0);
   
-  float noise_value = clamp(0.1 / dst, 0.0, 1.0);
-  fragColor.rgb += noise(uv * 12334.5232) * noise_value;
+  if (dst < 100.0)
+  {
+    float noise_value = clamp(0.1 / dst, 0.0, 1.0);
+    fragColor.rgb += noise(uv * 12334.5232) * noise_value;
+  }
   
   float fog_alpha = fog_scattering * exp(-position_model_space.y * fog_extinction) *
                     (1.0f - exp(-dst * normalize(position_camera_space).y * fog_extinction)) /

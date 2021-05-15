@@ -91,14 +91,19 @@ Prop::Prop(const PropType type, glm::vec3 position, glm::quat rotation, glm::vec
 void Prop::draw(const ZD::View &view, const World &world)
 {
   const float distance_to_camera = glm::distance(this->position, view.get_position());
-  if (distance_to_camera > 400.0f)
+  if (distance_to_camera > 1000.0f)
+    return;
+  
+  if (has_transulency && distance_to_camera > 800.0f)
     return;
   
   auto &shader = this->shader ? *this->shader : *Prop::default_shader;
   shader.use();
 
-  if (has_transulency && distance_to_camera < 100.0f)
-    shader.set_uniform<bool>("has_translucency", has_transulency);
+  if (has_transulency && distance_to_camera < 400.0f)
+    shader.set_uniform<bool>("has_translucency", true);
+  else
+    shader.set_uniform<bool>("has_translucency", false);
   
   shader.set_uniform<glm::vec3>("fog_color", world.sky_color_vec());
   shader.set_uniform<float>("fog_scattering", 1.3f);

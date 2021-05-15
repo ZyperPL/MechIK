@@ -45,8 +45,11 @@ void main()
   vec3 light = vec3(1.31, 1.32, 1.34) * t;
   fragColor.rgb *= light;
 
-  float noise_value = clamp(0.1 / dst, 0.0, 1.0);
-  fragColor.rgb += noise(nuv * 12334.5232) * noise_value;
+  if (dst < 100.0)
+  {
+    float noise_value = clamp(0.1 / dst, 0.0, 1.0);
+    fragColor.rgb += noise(nuv * 12334.5232) * noise_value;
+  }
 
   float fog_alpha = fog_scattering * exp(-position_model_space.y * fog_extinction) *
                     (1.0f - exp(-dst * normalize(position_camera_space).y * fog_extinction)) /

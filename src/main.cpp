@@ -107,12 +107,15 @@ int main()
 
   GridMap grid_map;
 
-  for (ssize_t i = -20; i < 20; i++)
-    for (ssize_t j = -20; j < 20; j++)
+  const float X_SPACING = 8.0f;
+  const float Y_SPACING = 10.0f;
+
+  for (ssize_t i = -60; i < 60; i++)
+    for (ssize_t j = -60; j < 60; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * 42.0 + (random(rd) - 0.5) * 15.0;
-      pos.z += j * 44.0 + (random(rd) - 0.5) * 21.0;
+      pos.x += i * X_SPACING + (random(rd) - 0.5) * (X_SPACING * 2.0f);
+      pos.z += j * Y_SPACING + (random(rd) - 0.5) * (Y_SPACING * 2.0f);
       pos.y = world->ground->get_y(pos.x, pos.z);
 
       auto map_node = grid_map.add(i, j);
@@ -122,57 +125,63 @@ int main()
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
-      if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
+      if (i % 2 == 0 && j % 3 == 0 && random(rd) > 0.8)
       {
-        const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-        const float s = sqrt((1.0f + theta) * 2.0f);
-        const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-        auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-        world->props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
-        added_prop = PropType::Rock;
-      }
-      else
-      {
-        bool gen_bush = false;
-        if (random(rd) < 0.3)
-          gen_bush = true;
-
-        if (!gen_bush)
+        if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
         {
-          pos -= n * 1.0f;
-          n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
           const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           const float s = sqrt((1.0f + theta) * 2.0f);
           const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
           auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-          world->props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
-          added_prop = PropType::Tree;
-          if (random(rd) < 0.7)
-          {
-            gen_bush = true;
-            pos.x += (random(rd) - 0.5) * 10.0;
-            pos.z += (random(rd) - 0.5) * 10.0;
-            pos.y = world->ground->get_y(pos.x, pos.z);
-          }
+          world->props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
+          added_prop = PropType::Rock;
         }
-
-        if (gen_bush)
+        else
         {
-          const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-          const float s = sqrt((1.0f + theta) * 2.0f);
-          const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-          auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-          if (random(rd) < 0.7)
+          bool gen_bush = false;
+          if (random(rd) < 0.3)
+            gen_bush = true;
+
+          if (!gen_bush)
           {
-            world->props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
-            if (!added_prop)
-              added_prop = PropType::Bush2;
+            pos -= n * 1.0f;
+            n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
+            const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+            const float s = sqrt((1.0f + theta) * 2.0f);
+            const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+            auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+            world->props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
+            added_prop = PropType::Tree;
+            if (random(rd) < 0.7)
+            {
+              gen_bush = true;
+              pos.x += (random(rd) - 0.5) * 10.0;
+              pos.z += (random(rd) - 0.5) * 10.0;
+              pos.y = world->ground->get_y(pos.x, pos.z);
+
+              n = world->ground->get_n(pos.x, pos.z);
+            }
           }
-          else
+
+          if (gen_bush)
           {
-            world->props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
-            if (!added_prop)
-              added_prop = PropType::Bush1;
+            pos -= n * 0.2f;
+            const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+            const float s = sqrt((1.0f + theta) * 2.0f);
+            const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
+            auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
+            if (random(rd) < 0.7)
+            {
+              world->props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
+              if (!added_prop)
+                added_prop = PropType::Bush2;
+            }
+            else
+            {
+              world->props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
+              if (!added_prop)
+                added_prop = PropType::Bush1;
+            }
           }
         }
       }
@@ -185,9 +194,9 @@ int main()
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(100.0),
+      ZD::Camera::Fov::from_degrees(90.0),
       WINDOW_WIDTH / WINDOW_HEIGHT,
-      ZD::Camera::ClippingPlane(1.0, 1800.0)),
+      ZD::Camera::ClippingPlane(0.1, 800.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
 
