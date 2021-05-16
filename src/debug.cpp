@@ -5,7 +5,7 @@
 std::vector<std::pair<glm::vec3, glm::vec3>> Debug::lines;
 std::vector<glm::vec3> Debug::cubes;
 GLuint Debug::buffer = 0;
-GLuint Debug::cube_buffer = 0;
+std::shared_ptr<ZD::Model> Debug::cube;
 std::shared_ptr<ZD::ShaderProgram> Debug::shader;
 std::unordered_map<std::string, bool> Debug::option;
 

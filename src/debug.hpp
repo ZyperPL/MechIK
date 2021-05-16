@@ -3,6 +3,7 @@
 #include "ZD/ShaderLoader.hpp"
 #include "ZD/Entity.hpp"
 #include "ZD/3rd/glm/gtc/type_ptr.hpp" // value_ptr
+#include "ZD/Model.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -25,7 +26,7 @@ struct Debug
   static void init()
   {
     glGenBuffers(1, &Debug::buffer);
-    glGenBuffers(1, &Debug::cube_buffer);
+    cube = ZD::Model::load(ZD::ModelDefault::Cube);
 
     Debug::shader = ZD::ShaderLoader()
                       .add(ZD::File("shaders/model.vertex.glsl"), GL_VERTEX_SHADER)
@@ -59,35 +60,6 @@ struct Debug
 
   static void generate_cube_buffer()
   {
-    std::vector<GLfloat> data;
-    const float U = 0.9f;
-    data.push_back(-U);
-    data.push_back(U);
-    data.push_back(-U);
-
-    data.push_back(U);
-    data.push_back(U);
-    data.push_back(-U);
-
-    data.push_back(U);
-    data.push_back(U);
-    data.push_back(U);
-    
-    
-    data.push_back(-U);
-    data.push_back(U);
-    data.push_back(-U);
-    
-    data.push_back(-U);
-    data.push_back(U);
-    data.push_back(U);
-    
-    data.push_back(U);
-    data.push_back(U);
-    data.push_back(U);
-
-    glBindBuffer(GL_ARRAY_BUFFER, Debug::cube_buffer);
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
   }
 
   static void draw_lines(const ZD::View &view)
@@ -137,11 +109,6 @@ struct Debug
 
     glUniformMatrix4fv(shader->get_uniform("V")->location, 1, GL_FALSE, glm::value_ptr(view_matrix));
     glUniformMatrix4fv(shader->get_uniform("P")->location, 1, GL_FALSE, glm::value_ptr(projection_matrix));
-    const auto position_attribute = shader->get_attribute("position");
-    glEnableVertexAttribArray(position_attribute->index);
-    glBindBuffer(GL_ARRAY_BUFFER, Debug::cube_buffer);
-    glVertexAttribPointer(position_attribute->index, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-
     shader->set_uniform<bool>("debug", true);
 
     for (const auto &cp : cubes)
@@ -149,10 +116,8 @@ struct Debug
       const glm::mat4 model_matrix = glm::translate(glm::mat4(1.0f), cp);
       glUniformMatrix4fv(shader->get_uniform("M")->location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-      glDrawArrays(GL_TRIANGLES, 0, 6);
+      cube->draw(*shader);
     }
-
-    glDisableVertexAttribArray(position_attribute->index);
   }
 
   static bool enabled(const std::string key)
@@ -168,7 +133,8 @@ struct Debug
   static void mech_debug(Mech &);
 
 private:
-  static GLuint buffer, cube_buffer;
+  static GLuint buffer;
+  static std::shared_ptr<ZD::Model> cube;
   static std::vector<std::pair<glm::vec3, glm::vec3>> lines;
   static std::vector<glm::vec3> cubes;
   static std::shared_ptr<ZD::ShaderProgram> shader;
