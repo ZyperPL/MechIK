@@ -126,7 +126,7 @@ int main()
 
       DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
 
-      if (i % 3 == 0 && j % 3 == 0 && random(rd) > 0.8)
+      if (i % 3 == 0 && j % 3 == 0 && random(rd) > 0.8 && glm::distance(mech->get_position(), pos) > 5.0f)
       {
         if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
         {
@@ -201,16 +201,6 @@ int main()
         }
       }
     }
-
-  const auto path = grid_map.get_path(-5, -35, 45, 23);
-  for (const auto &idx : path)
-  {
-    printf("%d,%d\n", idx.first, idx.second);
-    const float x = idx.first * X_SPACING;
-    const float z = idx.second * Y_SPACING;
-    const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
-    Debug::add_cube(pos);
-  }
 
   Sky sky(world->sky_color);
 
@@ -350,6 +340,20 @@ int main()
             Debug::add_cube(glm::vec3(p.x, p.y + 2.2f, p.z));
             Debug::add_cube(glm::vec3(p.x, p.y + 2.3f, p.z));
             Debug::add_cube(glm::vec3(p.x, p.y + 2.4f, p.z));
+
+            const int end_x = p.x / X_SPACING;
+            const int end_y = p.z / Y_SPACING;
+            const int start_x = mech->get_position().x / X_SPACING;
+            const int start_y = mech->get_position().z / Y_SPACING;
+            const auto path = grid_map.get_path(end_x, end_y, start_x, start_y);
+            for (const auto &idx : path)
+            {
+              const float x = idx.first * X_SPACING;
+              const float z = idx.second * Y_SPACING;
+              const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
+              Debug::add_cube(pos);
+            }
+
             break;
           }
         }
