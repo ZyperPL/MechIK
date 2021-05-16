@@ -21,6 +21,7 @@
 #include "3rd/imgui/imgui.h"
 #include "3rd/imgui/imgui_impl_glfw.h"
 #include "3rd/imgui/imgui_impl_opengl3.h"
+#include "ZD/3rd/glm/ext/matrix_projection.hpp"
 
 #include "debug.hpp"
 
@@ -321,12 +322,37 @@ int main()
     {
       if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
       {
-        const glm::vec3 new_pos { camera_position.x,
-                                  world->ground->get_y(camera_position.x, camera_position.z) + 5.0f,
-                                  camera_position.z };
-        mech->set_position(new_pos);
-        camera_position.x -= 4.0f;
-        camera_position.z -= 4.0f;
+        const auto mouse_position = window->input()->mouse().position();
+
+        const glm::vec3 click_world_space = glm::unProject(
+          glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 0.0f),
+          view.get_view_matrix(),
+          view.get_projection_matrix(),
+          glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
+
+        const glm::vec3 click_world_space_forward = glm::unProject(
+          glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 1.0f),
+          view.get_view_matrix(),
+          view.get_projection_matrix(),
+          glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
+
+        const glm::vec3 click_direction_world_space = glm::normalize(click_world_space_forward - click_world_space);
+
+        glm::vec3 p = click_world_space;
+        const size_t MAX_RAY_STEPS = 1000;
+        for (size_t i = 0; i < MAX_RAY_STEPS; i++)
+        {
+          p += click_direction_world_space * 3.0f;
+          if (p.y < world->ground->get_y(p.x, p.z))
+          {
+            Debug::add_cube(p);
+            Debug::add_cube(glm::vec3(p.x, p.y + 2.1f, p.z));
+            Debug::add_cube(glm::vec3(p.x, p.y + 2.2f, p.z));
+            Debug::add_cube(glm::vec3(p.x, p.y + 2.3f, p.z));
+            Debug::add_cube(glm::vec3(p.x, p.y + 2.4f, p.z));
+            break;
+          }
+        }
       }
     }
 
