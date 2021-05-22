@@ -6,6 +6,8 @@
 #include "prop.hpp"
 #include "ZD/3rd/glm/glm.hpp"
 
+struct World;
+
 class GridMap
 {
 public:
@@ -20,7 +22,7 @@ public:
       switch (type)
       {
         case PropType::Bush1:
-        case PropType::Bush2: return 0.4;
+        case PropType::Bush2: return 0.1;
         case PropType::House: return 1.0;
         case PropType::Rock: return 1.0;
         case PropType::Tree: return 1.0;
@@ -36,10 +38,9 @@ public:
       return std::min(normal_cost * normal_factor + occupied_factor, 1.0);
     }
   };
-
-  Node &add(int x, int y) { return nodes.insert({ std::pair { x, y }, Node { x, y } }).first->second; }
-
   std::map<std::pair<int, int>, Node> nodes;
 
+  Node &add(int x, int y) { return nodes.insert({ std::pair { x, y }, Node { x, y } }).first->second; }
   std::vector<std::pair<int, int> > get_path(int start_x, int start_y, int end_x, int end_y) const;
+  void clear_bad_nodes(const World &world);
 };

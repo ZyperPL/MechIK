@@ -57,16 +57,35 @@ Mech::Mech(glm::vec3 position)
              .compile();
 }
 
+void Mech::step_path(const World &world)
+{
+  if (path.empty())
+    return;
+
+  const auto get_3d_position = [&world](const int x, const int z) {
+    const float pt_x = x * world.X_SPACING;
+    const float pt_z = z * world.Z_SPACING;
+    return glm::vec3 { pt_x, world.ground->get_y(pt_x, pt_z), pt_z };
+  };
+
+  const float distance_to_start = glm::distance(position, get_3d_position(path.front().first, path.front().second));
+  const float distance_to_end = glm::distance(position, get_3d_position(path.back().first, path.back().second));
+
+  printf("distance to start: %24.12f\ndistance to end: %24.12f\n", distance_to_start, distance_to_end);
+}
+
 void Mech::update([[maybe_unused]] const World &world)
 {
-  const float angle_step = 2.0f*M_PI / static_cast<float>(legs_b.size());
+  step_path(world);
+
+  const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
 
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
     auto &leg_e = legs_e[i];
 
     const float angle = angle_step / 2.0f + i * angle_step;
-    
+
     const glm::quat target_rotation = glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
     const auto target_pos = position + target_rotation * glm::vec3(4.0f, 0.0f, 0.0f);
     leg_e->target_position.x = target_pos.x;

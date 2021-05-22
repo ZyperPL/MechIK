@@ -12,13 +12,20 @@ class Mech;
 struct Debug;
 
 #ifdef DEBUG
+
+#define DBG_ENABLE(k) Debug::enable(k)
+
 #define DBG(k, x)        \
   if (Debug::enabled(k)) \
   {                      \
     x;                   \
   }
+
 #else
+
+#define DBG_ENABLE(k) 
 #define DBG(k, x)
+
 #endif
 
 struct Debug

@@ -29,6 +29,8 @@ public:
   void update(const World &world);
   void render(ZD::View &view, const World &world);
 
+  void set_path(std::vector<std::pair<int, int>> &&path) { this->path = path; }
+
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
 
@@ -36,6 +38,9 @@ private:
   std::vector<std::unique_ptr<LegPart>> legs_b;
   std::vector<std::unique_ptr<LegPart>> legs_m;
   std::vector<std::unique_ptr<LegPart>> legs_e;
+  std::vector<std::pair<int, int>> path;
+
+  void step_path(const World &world);
 
   friend struct Debug;
 };

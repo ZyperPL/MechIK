@@ -103,129 +103,8 @@ int main()
 
   world->ground = std::make_unique<Ground>();
   world->ground->set_fog_color(world->sky_color);
+  world->generate();
 
-  static std::random_device rd;
-  std::uniform_real_distribution<float> random(0.0f, 1.0f);
-
-  auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 8.0, 10.0 });
-
-  GridMap grid_map;
-  std::set<std::pair<int, int>> bad_nodes;
-
-  const float X_SPACING = 8.0f;
-  const float Z_SPACING = 9.0f;
-
-  const ssize_t MIN_X = -100;
-  const ssize_t MAX_X = 100;
-  const ssize_t MIN_Z = -100;
-  const ssize_t MAX_Z = 100;
-
-  for (ssize_t i = MIN_X; i < MAX_X; i++)
-  {
-    for (ssize_t j = MIN_Z; j < MAX_Z; j++)
-    {
-      glm::vec3 pos { 0.0, -2.0, 0.0 };
-      pos.x += i * X_SPACING + (random(rd) - 0.5) * X_SPACING / 2.0f;
-      pos.z += j * Z_SPACING + (random(rd) - 0.5) * Z_SPACING / 2.0f;
-      pos.y = world->ground->get_y(pos.x, pos.z);
-
-      auto &map_node = grid_map.add(static_cast<int>(i), static_cast<int>(j));
-
-      auto n = world->ground->get_n(pos.x, pos.z);
-      std::optional<PropType> added_prop;
-
-      DBG("Props orientations", Debug::add_line(pos, pos + n * 20.0f));
-
-      if (i % 3 == 0 && j % 3 == 0 && random(rd) > 0.8 && glm::distance(mech->get_position(), pos) > 5.0f)
-      {
-        if ((pos.y > 0.5 && pos.y < 2.0) || pos.y < -10.0)
-        {
-          const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-          const float s = sqrt((1.0f + theta) * 2.0f);
-          const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-          auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-          world->props.push_back(Prop { PropType::Rock, pos, rot, glm::vec3 { 1.0f } });
-          added_prop = PropType::Rock;
-        }
-        else
-        {
-          bool gen_bush = false;
-          if (random(rd) < 0.3)
-            gen_bush = true;
-
-          if (!gen_bush)
-          {
-            pos -= n * 1.0f;
-            n = glm::normalize(glm::vec3 { n.x, n.y * 8.0f, n.z });
-            const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-            const float s = sqrt((1.0f + theta) * 2.0f);
-            const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-            auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-            world->props.push_back(Prop { PropType::Tree, pos, rot, glm::vec3 { 1.0f } });
-            added_prop = PropType::Tree;
-            if (random(rd) < 0.7)
-            {
-              gen_bush = true;
-              pos.x += (random(rd) - 0.5) * 10.0;
-              pos.z += (random(rd) - 0.5) * 10.0;
-              pos.y = world->ground->get_y(pos.x, pos.z);
-
-              n = world->ground->get_n(pos.x, pos.z);
-            }
-          }
-
-          if (gen_bush)
-          {
-            pos -= n * 0.2f;
-            const float theta = glm::dot(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-            const float s = sqrt((1.0f + theta) * 2.0f);
-            const glm::vec3 a = glm::cross(glm::vec3 { 0.0f, 1.0f, 0.0f }, n);
-            auto rot = glm::quat(s * 0.5f, a.x * (1.0f / s), a.y * (1.0f / s), a.z * (1.0f / s));
-            if (random(rd) < 0.7)
-            {
-              world->props.push_back(Prop { PropType::Bush2, pos, rot, glm::vec3 { 1.0f } });
-              if (!added_prop)
-                added_prop = PropType::Bush2;
-            }
-            else
-            {
-              world->props.push_back(Prop { PropType::Bush1, pos, rot, glm::vec3 { 1.0f } });
-              if (!added_prop)
-                added_prop = PropType::Bush1;
-            }
-          }
-        }
-      }
-
-      map_node.cost = GridMap::Node::calculate_cost(n, added_prop);
-      if (map_node.cost > 0.99)
-      {
-        bad_nodes.insert({ map_node.x, map_node.y });
-      }
-    }
-  }
-
-  for (ssize_t i = MIN_X; i < MAX_X; i++)
-  {
-    for (ssize_t j = MIN_Z; j < MAX_Z; j++)
-    {
-      const std::pair<int, int> key { i, j };
-
-      if (bad_nodes.contains(key))
-      {
-        bad_nodes.erase(key);
-        grid_map.nodes.erase(key);
-        const int REMOVE_R = 1;
-        for (int iy = -REMOVE_R; iy <= REMOVE_R; ++iy)
-        {
-          for (int ix = -REMOVE_R; ix <= REMOVE_R; ++ix)
-          {
-            grid_map.nodes.erase({ i + ix, j + iy });
-          }
-        }
-      }
-    }
-  }
   Sky sky(world->sky_color);
 
   ZD::View view(
@@ -234,6 +113,8 @@ int main()
     glm::vec3(0.0, 0.0, 0.0));
 
   glm::vec3 camera_position { 0.0, 2.0, 0.0 };
+
+  assert(world->mech);
 
   printf("Ready.\n");
   while (window->is_open())
@@ -244,7 +125,7 @@ int main()
     renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
-    mech->update(*world);
+    world->mech->update(*world);
 
     if (ImGui::Begin("Debug options"))
     {
@@ -254,10 +135,10 @@ int main()
 
       if (ImGui::Button("Show graph grid"))
       {
-        for (auto &&idx_node : grid_map.nodes)
+        for (auto &&idx_node : world->grid_map->nodes)
         {
-          const float x = idx_node.first.first * X_SPACING;
-          const float z = idx_node.first.second * Z_SPACING;
+          const float x = idx_node.first.first * world->X_SPACING;
+          const float z = idx_node.first.second * world->Z_SPACING;
 
           const glm::vec3 pos { x, world->ground->get_y(x, z), z };
           Debug::add_cube(pos);
@@ -279,8 +160,8 @@ int main()
 
     if (ImGui::Begin("Mech"))
     {
-      Debug::mech_properties(*mech);
-      Debug::mech_debug(*mech);
+      Debug::mech_properties(*world->mech);
+      Debug::mech_debug(*world->mech);
     }
     ImGui::End();
 
@@ -291,17 +172,17 @@ int main()
       CAMERA_STEP_SIZE /= 10.0;
 
     if (window->input()->key(ZD::Key::W))
-      camera_position -= camera_forward(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position -= camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::S))
-      camera_position += camera_forward(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position += camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::A))
-      camera_position += camera_right(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position += camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::D))
-      camera_position -= camera_right(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position -= camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::E))
-      camera_position += camera_up(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position += camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::Q))
-      camera_position -= camera_up(view.get_position(), mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_position -= camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
 
     if (!camera_noclip)
     {
@@ -313,11 +194,11 @@ int main()
     }
 
     view.set_position(camera_position);
-    view.set_target(mech->get_position());
+    view.set_target(world->mech->get_position());
 
     sky.render(view);
 
-    mech->render(view, *world);
+    world->mech->render(view, *world);
     for (auto &&prop : world->props)
     {
       // non transparent
@@ -365,18 +246,19 @@ int main()
             Debug::add_cube(glm::vec3(p.x, p.y + 2.3f, p.z));
             Debug::add_cube(glm::vec3(p.x, p.y + 2.4f, p.z));
 
-            const int end_x = p.x / X_SPACING;
-            const int end_y = p.z / Z_SPACING;
-            const int start_x = mech->get_position().x / X_SPACING;
-            const int start_y = mech->get_position().z / Z_SPACING;
-            const auto path = grid_map.get_path(end_x, end_y, start_x, start_y);
+            const int end_x = p.x / world->X_SPACING;
+            const int end_y = p.z / world->Z_SPACING;
+            const int start_x = world->mech->get_position().x / world->X_SPACING;
+            const int start_y = world->mech->get_position().z / world->Z_SPACING;
+            auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
             for (const auto &idx : path)
             {
-              const float x = idx.first * X_SPACING;
-              const float z = idx.second * Z_SPACING;
+              const float x = idx.first * world->X_SPACING;
+              const float z = idx.second * world->Z_SPACING;
               const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
               Debug::add_cube(pos);
             }
+            world->mech->set_path(std::move(path));
 
             break;
           }

@@ -1,4 +1,5 @@
 #include "gridmap.hpp"
+#include "world.hpp"
 
 #include <utility>
 
@@ -77,4 +78,25 @@ std::vector<std::pair<int, int>> GridMap::get_path(int start_x, int start_y, int
   }
 
   return path;
+}
+
+void GridMap::clear_bad_nodes(const World &world)
+{
+  const int REMOVE_R = 1;
+
+  for (ssize_t i = world.MIN_X; i < world.MAX_X; i++)
+    for (ssize_t j = world.MIN_Z; j < world.MAX_Z; j++)
+    {
+      const std::pair<int, int> key { i, j };
+
+      if (!nodes.contains(key))
+        continue;
+
+      if (nodes.at(key).cost > 0.99)
+      {
+        for (int iy = -REMOVE_R; iy <= REMOVE_R; ++iy)
+          for (int ix = -REMOVE_R; ix <= REMOVE_R; ++ix)
+            nodes.erase({ i + ix, j + iy });
+      }
+    }
 }
