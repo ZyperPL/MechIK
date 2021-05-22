@@ -135,6 +135,5 @@ void Debug::mech_debug(Mech &mech)
     {
       add_cube(leg_e->target_position);
     }
-    generate_cube_buffer();
   }
 }

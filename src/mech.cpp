@@ -2,8 +2,35 @@
 
 #include "ZD/3rd/glm/gtx/rotate_vector.hpp"
 #include "ZD/3rd/glm/ext/quaternion_trigonometric.hpp"
+#include "ZD/3rd/glm/gtx/quaternion.hpp"
 
 #include "world.hpp"
+
+glm::quat rotation_between_vectors(glm::vec3 start, glm::vec3 dest)
+{
+  start = normalize(start);
+  dest = normalize(dest);
+
+  float cosTheta = dot(start, dest);
+  glm::vec3 rotationAxis;
+
+  if (cosTheta < -1.0f + 0.001f)
+  {
+    rotationAxis = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), start);
+    if (glm::length2(rotationAxis) < 0.01f)
+      rotationAxis = glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), start);
+
+    rotationAxis = normalize(rotationAxis);
+    return glm::angleAxis((float)M_PI, rotationAxis);
+  }
+
+  rotationAxis = cross(start, dest);
+
+  float s = sqrt((1.0f + cosTheta) * 2.0f);
+  float invs = 1.0f / s;
+
+  return glm::quat(s * 0.5f, rotationAxis.x * invs, rotationAxis.y * invs, rotationAxis.z * invs);
+}
 
 LegPart::LegPart(const size_t part_index)
 : ZD::Entity {}
@@ -59,24 +86,48 @@ Mech::Mech(glm::vec3 position)
 
 void Mech::step_path(const World &world)
 {
-  if (path.empty())
+  if (path.size() < 2)
     return;
 
-  const auto get_3d_position = [&world](const int x, const int z) {
-    const float pt_x = x * world.X_SPACING;
-    const float pt_z = z * world.Z_SPACING;
+  const auto get_3d_position = [&world](const auto &xz) {
+    const float pt_x = xz.first * world.X_SPACING;
+    const float pt_z = xz.second * world.Z_SPACING;
     return glm::vec3 { pt_x, world.ground->get_y(pt_x, pt_z), pt_z };
   };
 
-  const float distance_to_start = glm::distance(position, get_3d_position(path.front().first, path.front().second));
-  const float distance_to_end = glm::distance(position, get_3d_position(path.back().first, path.back().second));
+  glm::vec3 closest_path_point = get_3d_position(path.front());
+  glm::vec3 next_path_point = get_3d_position(*(path.begin() + 1));
 
-  printf("distance to start: %24.12f\ndistance to end: %24.12f\n", distance_to_start, distance_to_end);
+  for (size_t i = 0; i < path.size(); ++i)
+  {
+    const auto &coord = path[i];
+    const glm::vec3 path_point = get_3d_position(coord);
+    if (glm::distance(position, path_point) < glm::distance(position, closest_path_point))
+    {
+      closest_path_point = path_point;
+      if (i < path.size() - 1)
+        next_path_point = get_3d_position(path[i + 1]);
+    }
+  }
+
+  if (closest_path_point == next_path_point && glm::distance(next_path_point, position) < 2.0f)
+  {
+    return;
+  }
+
+  glm::vec3 move_vec = glm::normalize(next_path_point - position);
+  position += move_vec * 0.2f;
+  position.y = world.ground->get_y(position.x, position.z) + 2.0f;
+
+  const glm::vec3 FORWARD(0.0f, 0.0f, 1.0f);
+  move_vec.y = 0.0f;
+  rotation = glm::mix(rotation, rotation_between_vectors(FORWARD, move_vec), 0.1f);
 }
 
 void Mech::update([[maybe_unused]] const World &world)
 {
   step_path(world);
+  body->set_rotation(rotation);
 
   const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
 
@@ -86,13 +137,15 @@ void Mech::update([[maybe_unused]] const World &world)
 
     const float angle = angle_step / 2.0f + i * angle_step;
 
-    const glm::quat target_rotation = glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::quat target_rotation = rotation * glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
     const auto target_pos = position + target_rotation * glm::vec3(4.0f, 0.0f, 0.0f);
     leg_e->target_position.x = target_pos.x;
     leg_e->target_position.y = world.ground->get_y(target_pos.x, target_pos.z);
     leg_e->target_position.z = target_pos.z;
 
     leg_e->set_rotation(target_rotation);
+    legs_m[i]->set_rotation(target_rotation);
+    legs_b[i]->set_rotation(target_rotation);
   }
 
   for (size_t i = 0; i < legs_b.size(); ++i)

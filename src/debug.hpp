@@ -3,6 +3,7 @@
 #include "ZD/ShaderLoader.hpp"
 #include "ZD/Entity.hpp"
 #include "ZD/3rd/glm/gtc/type_ptr.hpp" // value_ptr
+#include "ZD/3rd/glm/ext/matrix_transform.hpp" // translate, rotate, scale, identity
 #include "ZD/Model.hpp"
 
 #include <vector>
@@ -23,7 +24,7 @@ struct Debug;
 
 #else
 
-#define DBG_ENABLE(k) 
+#define DBG_ENABLE(k)
 #define DBG(k, x)
 
 #endif
@@ -65,10 +66,6 @@ struct Debug
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
   }
 
-  static void generate_cube_buffer()
-  {
-  }
-
   static void draw_lines(const ZD::View &view)
   {
     static size_t a = 1000;
@@ -101,14 +98,6 @@ struct Debug
 
   static void draw_cubes(const ZD::View &view)
   {
-    static size_t a = 1000;
-    a++;
-    if (a > 500)
-    {
-      generate_cube_buffer();
-      a = 0;
-    }
-
     Debug::shader->use();
 
     const glm::mat4 projection_matrix = view.get_projection_matrix();
@@ -120,7 +109,8 @@ struct Debug
 
     for (const auto &cp : cubes)
     {
-      const glm::mat4 model_matrix = glm::translate(glm::mat4(1.0f), cp);
+      const glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), cp) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
       glUniformMatrix4fv(shader->get_uniform("M")->location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
       cube->draw(*shader);
