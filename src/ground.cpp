@@ -33,6 +33,7 @@ Ground::Ground()
       glm::vec3 n = get_n(x, z);
       model->add_normal(n.x, n.y, n.z);
 
+      //DBG_ENABLE("Ground Normals");
       DBG("Ground Normals", Debug::add_line(glm::vec3 { x, y0, z }, glm::vec3 { x, y0, z } + n * 10.0f));
 
       model->add_vertex(x, y1, z + UNIT);
@@ -85,7 +86,7 @@ void Ground::draw(const ZD::View &view)
 {
   shader->use();
   shader->set_uniform<glm::vec3>("fog_color", fog_color);
-  shader->set_uniform<float>("fog_scattering", 1.3);
+  shader->set_uniform<float>("fog_scattering", 1.25);
   shader->set_uniform<float>("fog_extinction", 0.001);
   Entity::draw(*shader, view);
 }

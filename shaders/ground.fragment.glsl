@@ -32,18 +32,21 @@ void main()
 {
   vec2 nuv = uv * texture_wrap;
   float dst = length(position_camera_space);
-  
-  float e = clamp((32.0 + position_model_space.y) / 32.0, 0.0, 1.0);
 
+  float e = clamp((32.0 + position_model_space.y) / 32.0, 0.0, 1.0);
   vec4 t1 = texture(sampler, nuv);
   vec4 t2 = texture(sampler2, nuv) * e + (1.0 - e) * texture(sampler3, nuv);
-
   e = clamp((position_model_space.y + 2.0) / 20.0, 0.0, 1.0);
-  fragColor = t1 * e + t2 * (1.0 - e);
-  
-  float t = clamp(dot(normal, vec3(0.2, 1.0, -0.3)), 0.0, 1.0);
-  vec3 light = vec3(1.31, 1.32, 1.34) * t;
-  fragColor.rgb *= light;
+  vec4 tex = t1 * e + t2 * (1.0 - e);
+
+  const vec3 light_dir = normalize(vec3(0.2, 1.0, -0.3));
+  float light = clamp(dot(normalize(normal), light_dir), 0.0, 1.0);
+  float specular_light = clamp(dot(normalize(-position_camera_space.xyz), reflect(-light_dir, normal)), 0.0, 1.0);
+
+  fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  fragColor = vec4(0.53, 0.56, 0.58, 1.0) * tex;
+  fragColor += clamp(tex * 1.6 * light * light, vec4(0.0, 0.0, 0.0, 0.0), tex * 2.0);
+  fragColor += clamp(tex * 0.4 * pow(specular_light, 20.0), vec4(0.0, 0.0, 0.0, 0.0), tex);
 
   if (dst < 100.0)
   {
