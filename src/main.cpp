@@ -1,6 +1,9 @@
 #include <map>
+#include <unordered_set>
+#include <set>
 #include <memory>
 #include <random>
+#include <utility>
 
 #include "ZD/Entity.hpp"
 #include "ZD/Input.hpp"
@@ -104,22 +107,29 @@ int main()
   static std::random_device rd;
   std::uniform_real_distribution<float> random(0.0f, 1.0f);
 
-  auto mech = std::make_shared<Mech>(glm::vec3 { 4.0, 8.0, 3.0 });
+  auto mech = std::make_shared<Mech>(glm::vec3 { 2.0, 8.0, 10.0 });
 
   GridMap grid_map;
+  std::set<std::pair<int, int>> bad_nodes;
 
   const float X_SPACING = 8.0f;
-  const float Y_SPACING = 9.0f;
+  const float Z_SPACING = 9.0f;
 
-  for (ssize_t i = -60; i < 60; i++)
-    for (ssize_t j = -60; j < 60; j++)
+  const ssize_t MIN_X = -100;
+  const ssize_t MAX_X = 100;
+  const ssize_t MIN_Z = -100;
+  const ssize_t MAX_Z = 100;
+
+  for (ssize_t i = MIN_X; i < MAX_X; i++)
+  {
+    for (ssize_t j = MIN_Z; j < MAX_Z; j++)
     {
       glm::vec3 pos { 0.0, -2.0, 0.0 };
       pos.x += i * X_SPACING + (random(rd) - 0.5) * X_SPACING / 2.0f;
-      pos.z += j * Y_SPACING + (random(rd) - 0.5) * Y_SPACING / 2.0f;
+      pos.z += j * Z_SPACING + (random(rd) - 0.5) * Z_SPACING / 2.0f;
       pos.y = world->ground->get_y(pos.x, pos.z);
 
-      auto map_node = grid_map.add(i, j);
+      auto &map_node = grid_map.add(static_cast<int>(i), static_cast<int>(j));
 
       auto n = world->ground->get_n(pos.x, pos.z);
       std::optional<PropType> added_prop;
@@ -188,9 +198,23 @@ int main()
       }
 
       map_node.cost = GridMap::Node::calculate_cost(n, added_prop);
-      if (map_node.cost > 0.9)
+      if (map_node.cost > 0.99)
       {
-        // remove all radius
+        bad_nodes.insert({ map_node.x, map_node.y });
+      }
+    }
+  }
+
+  for (ssize_t i = MIN_X; i < MAX_X; i++)
+  {
+    for (ssize_t j = MIN_Z; j < MAX_Z; j++)
+    {
+      const std::pair<int, int> key { i, j };
+
+      if (bad_nodes.contains(key))
+      {
+        bad_nodes.erase(key);
+        grid_map.nodes.erase(key);
         const int REMOVE_R = 1;
         for (int iy = -REMOVE_R; iy <= REMOVE_R; ++iy)
         {
@@ -201,7 +225,7 @@ int main()
         }
       }
     }
-
+  }
   Sky sky(world->sky_color);
 
   ZD::View view(
@@ -233,7 +257,7 @@ int main()
         for (auto &&idx_node : grid_map.nodes)
         {
           const float x = idx_node.first.first * X_SPACING;
-          const float z = idx_node.first.second * Y_SPACING;
+          const float z = idx_node.first.second * Z_SPACING;
 
           const glm::vec3 pos { x, world->ground->get_y(x, z), z };
           Debug::add_cube(pos);
@@ -342,14 +366,14 @@ int main()
             Debug::add_cube(glm::vec3(p.x, p.y + 2.4f, p.z));
 
             const int end_x = p.x / X_SPACING;
-            const int end_y = p.z / Y_SPACING;
+            const int end_y = p.z / Z_SPACING;
             const int start_x = mech->get_position().x / X_SPACING;
-            const int start_y = mech->get_position().z / Y_SPACING;
+            const int start_y = mech->get_position().z / Z_SPACING;
             const auto path = grid_map.get_path(end_x, end_y, start_x, start_y);
             for (const auto &idx : path)
             {
               const float x = idx.first * X_SPACING;
-              const float z = idx.second * Y_SPACING;
+              const float z = idx.second * Z_SPACING;
               const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
               Debug::add_cube(pos);
             }
