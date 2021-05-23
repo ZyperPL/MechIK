@@ -45,7 +45,7 @@ void main()
 
   fragColor = vec4(0.0, 0.0, 0.0, 1.0);
   fragColor = vec4(0.53, 0.56, 0.58, 1.0) * tex;
-  fragColor += clamp(tex * 1.6 * light * light, vec4(0.0, 0.0, 0.0, 0.0), tex * 2.0);
+  fragColor += clamp(tex * 1.9 * light * light, vec4(0.0, 0.0, 0.0, 0.0), tex);
   fragColor += clamp(tex * 0.4 * pow(specular_light, 20.0), vec4(0.0, 0.0, 0.0, 0.0), tex);
 
   if (dst < 100.0)

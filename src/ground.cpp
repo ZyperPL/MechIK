@@ -71,7 +71,8 @@ Ground::Ground()
   texture->set_name("sampler");
   add_texture(texture);
 
-  texture = ZD::Texture::load(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
+  //texture = ZD::Texture::load(ZD::Image::load("textures/ground104_diffuse.tga"), texture_params);
+  texture = ZD::Texture::load(ZD::Image::load("textures/chihuahua.jpg"), texture_params);
   texture->set_name("sampler2");
   add_texture(texture);
   

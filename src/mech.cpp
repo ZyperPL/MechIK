@@ -32,6 +32,41 @@ glm::quat rotation_between_vectors(glm::vec3 start, glm::vec3 dest)
   return glm::quat(s * 0.5f, rotationAxis.x * invs, rotationAxis.y * invs, rotationAxis.z * invs);
 }
 
+glm::quat rotate_lookat(glm::quat q1, glm::quat q2, float maxAngle)
+{
+  if (maxAngle < 0.001f)
+  {
+    return q1;
+  }
+
+  float cosTheta = glm::dot(q1, q2);
+
+  if (cosTheta > 0.9999f)
+  {
+    return q2;
+  }
+
+  if (cosTheta < 0)
+  {
+    q1 = q1 * -1.0f;
+    cosTheta *= -1.0f;
+  }
+
+  float angle = glm::acos(cosTheta);
+
+  if (angle < maxAngle)
+  {
+    return q2;
+  }
+
+  float fT = maxAngle / angle;
+  angle = maxAngle;
+
+  glm::quat res = (glm::sin((1.0f - fT) * angle) * q1 + glm::sin(fT * angle) * q2) / glm::sin(angle);
+  res = glm::normalize(res);
+  return res;
+}
+
 LegPart::LegPart(const size_t part_index)
 : ZD::Entity {}
 , part_index { part_index }
@@ -116,58 +151,92 @@ void Mech::step_path(const World &world)
   }
 
   glm::vec3 move_vec = glm::normalize(next_path_point - position);
-  position += move_vec * 0.2f;
+  position += move_vec * 0.1f; // TODO: move speed parameter
   position.y = world.ground->get_y(position.x, position.z) + 2.0f;
 
-  const glm::vec3 FORWARD(0.0f, 0.0f, 1.0f);
+  const glm::vec3 FORWARD { 0.0f, 0.0f, 1.0f };
   move_vec.y = 0.0f;
-  rotation = glm::mix(rotation, rotation_between_vectors(FORWARD, move_vec), 0.1f);
+  rotation =
+    rotate_lookat(rotation, rotation_between_vectors(FORWARD, move_vec), 0.02f); //TODO: rotation speed parameter
 }
 
 void Mech::update([[maybe_unused]] const World &world)
 {
+  // move and rotate based on path
   step_path(world);
+  body->set_position(position);
   body->set_rotation(rotation);
 
+  // find leg end target position
   const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
-
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
-    auto &leg_e = legs_e[i];
-
     const float angle = angle_step / 2.0f + i * angle_step;
 
     const glm::quat target_rotation = rotation * glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
-    const auto target_pos = position + target_rotation * glm::vec3(4.0f, 0.0f, 0.0f);
-    leg_e->target_position.x = target_pos.x;
-    leg_e->target_position.y = world.ground->get_y(target_pos.x, target_pos.z);
-    leg_e->target_position.z = target_pos.z;
+    auto target_pos = position + target_rotation * glm::vec3(3.1f, 0.0f, 0.0f);
+    target_pos.y = world.ground->get_y(target_pos.x, target_pos.z);
 
-    leg_e->set_rotation(target_rotation);
-    legs_m[i]->set_rotation(target_rotation);
-    legs_b[i]->set_rotation(target_rotation);
+    if (
+      glm::distance(
+        legs_e[i]->get_position() + legs_e[i]->get_rotation() * glm::vec3 { 1.0f, 0.0f, 0.0f },
+        target_pos) > 1.2f)
+    {
+      legs_e[i]->target_position = target_pos;
+    }
   }
 
+  // inverse
+  for (size_t i = 0; i < legs_b.size(); ++i)
+  {
+    const glm::vec3 dir_e = glm::normalize(legs_e[i]->target_position - legs_e[i]->get_position());
+    legs_e[i]->set_position(legs_e[i]->target_position - dir_e * 1.0f);
+    legs_e[i]->set_rotation(rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_e));
+
+    const glm::vec3 dir_m = glm::normalize(legs_e[i]->get_position() - legs_m[i]->get_position());
+    legs_m[i]->set_position(legs_e[i]->get_position() - dir_m * 1.0f);
+    legs_m[i]->set_rotation(rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_m));
+
+    const glm::vec3 dir_b = glm::normalize(legs_m[i]->get_position() - legs_b[i]->get_position());
+    legs_b[i]->set_position(legs_m[i]->get_position() - dir_b * 1.0f);
+    legs_b[i]->set_rotation(rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0 }, dir_b));
+  }
+
+  // forward
+  for (size_t i = 0; i < legs_b.size(); ++i)
+  {
+    const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -1.0f, 0.0f };
+    legs_b[i]->set_position(b_translate);
+
+    const glm::vec3 m_translate = b_translate + legs_b[i]->get_rotation() * glm::vec3 { 1.0f, 0.0f, 0.0f };
+    legs_m[i]->set_position(m_translate);
+
+    const glm::vec3 e_translate = m_translate + legs_m[i]->get_rotation() * glm::vec3 { 1.0f, 0.0f, 0.0f };
+    legs_e[i]->set_position(e_translate);
+  }
+
+#if 0
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
     auto &leg_b = legs_b[i];
     const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -1.0f, 0.0f };
     const glm::quat b_rotate = rotation * leg_b->get_rotation();
     leg_b->set_position(b_translate);
-    leg_b->set_rotation(b_rotate);
+    //leg_b->set_rotation(b_rotate);
 
     auto &leg_m = legs_m[i];
-    const glm::vec3 m_translate = b_translate + b_rotate * glm::vec3 { 1.0f, 0.0f, 0.0f };
-    const glm::quat m_rotate = b_rotate * leg_m->get_rotation();
+    const glm::vec3 m_translate = b_translate + leg_b->get_rotation() * glm::vec3 { 1.0f, 0.0f, 0.0f };
+    const glm::quat m_rotate = leg_b->get_rotation() * leg_m->get_rotation();
     leg_m->set_position(m_translate);
-    leg_m->set_rotation(m_rotate);
+    //leg_m->set_rotation(m_rotate);
 
     auto &leg_e = legs_e[i];
-    const glm::vec3 e_translate = m_translate + m_rotate * glm::vec3 { 1.0f, 0.0f, 0.0f };
+    const glm::vec3 e_translate = m_translate + leg_m->get_rotation() * glm::vec3 { 1.0f, 0.0f, 0.0f };
     //const glm::quat e_rotate = m_rotate * leg_e->get_rotation();
     leg_e->set_position(e_translate);
-    //leg_e->set_rotation(e_rotate);//TODO
+    //leg_e->set_rotation(e_rotate);
   }
+#endif
 }
 
 void Mech::render(ZD::View &view, [[maybe_unused]] const World &world)
