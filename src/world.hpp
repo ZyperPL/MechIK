@@ -30,10 +30,10 @@ struct World
 
   const float X_SPACING = 8.0f;
   const float Z_SPACING = 9.0f;
-  const ssize_t MIN_X = -100;
-  const ssize_t MAX_X = 100;
-  const ssize_t MIN_Z = -100;
-  const ssize_t MAX_Z = 100;
+  const ssize_t MIN_X = -50;
+  const ssize_t MAX_X = 50;
+  const ssize_t MIN_Z = -50;
+  const ssize_t MAX_Z = 50;
 
   friend struct Debug;
 };

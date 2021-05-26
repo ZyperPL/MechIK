@@ -248,8 +248,17 @@ int main()
 
             const int end_x = p.x / world->X_SPACING;
             const int end_y = p.z / world->Z_SPACING;
-            const int start_x = world->mech->get_position().x / world->X_SPACING;
-            const int start_y = world->mech->get_position().z / world->Z_SPACING;
+            int start_x = world->mech->get_position().x / world->X_SPACING;
+            int start_y = world->mech->get_position().z / world->Z_SPACING;
+
+            size_t tries = 20;
+            while (tries > 0 && !world->grid_map->nodes.contains({start_x, start_y}))
+            {
+              start_x = (start_x + 1);
+              start_y = (start_y + 1);
+              tries--;
+            }
+
             auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
             for (const auto &idx : path)
             {
