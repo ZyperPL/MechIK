@@ -13,24 +13,11 @@ public:
 
   glm::vec3 get_n(const float x, const float z) const
   {
-    const auto vertex_n = [&](const float x, const float z) {
-      const glm::vec3 a { x, get_y(x, z), z };
-      const glm::vec3 b { x + 1.0f, get_y(x + 1.0f, z), z };
-      const glm::vec3 c { x, get_y(x, z + 1.0f), z + 1.0f };
-      return glm::normalize(glm::cross(c - a, b - a));
-    };
-
-    const float R = 0.5f;
-    glm::vec3 v { 0.0f, 0.0f, 0.0f };
-    for (float zs = -R; zs <= R; zs += 0.5f)
-    {
-      for (float xs = -R; xs <= R; xs += 0.5f)
-      {
-        v += vertex_n(x, z);
-      }
-    }
-    return glm::normalize(v);
-  };
+    const glm::vec3 a { x, get_y(x, z), z };
+    const glm::vec3 b { x + UNIT, get_y(x + UNIT, z), z };
+    const glm::vec3 c { x, get_y(x, z + UNIT), z + UNIT };
+    return glm::normalize(glm::cross(c - a, b - a));
+  }
 
   void draw(const ZD::View &view);
 
@@ -39,8 +26,8 @@ public:
     fog_color = { color.red_float(), color.green_float(), color.blue_float() };
   }
 
+  const float UNIT { 10.0f };
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
-  const float UNIT { 10.0f };
   glm::vec3 fog_color { 0.88, 0.94, 1.0 };
 };

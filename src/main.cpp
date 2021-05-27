@@ -122,7 +122,7 @@ int main()
     renderer.clear();
     glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 1.0);
     renderer.enable_depth_test(GL_LEQUAL);
-    renderer.enable_cull_face();
+    renderer.disable_cull_face();
     renderer.update();
     imgui_frame();
     world->mech->update(*world);
@@ -137,11 +137,15 @@ int main()
       {
         for (auto &&idx_node : world->grid_map->nodes)
         {
-          const float x = idx_node.first.first * world->X_SPACING;
-          const float z = idx_node.first.second * world->Z_SPACING;
+          for (float zz = 0.0; zz < 1.0; zz+= 1.0)
+          for (float xx = 0.0; xx < 1.0; xx+= 1.0)
+          {
+            const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
+            const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
 
-          const glm::vec3 pos { x, world->ground->get_y(x, z), z };
-          Debug::add_cube(pos);
+            const glm::vec3 pos { x, world->ground->get_y(x, z), z };
+            Debug::add_cube(pos);
+          }
         }
       }
     }
@@ -241,10 +245,7 @@ int main()
           if (p.y < world->ground->get_y(p.x, p.z))
           {
             Debug::add_cube(p);
-            Debug::add_cube(glm::vec3(p.x, p.y + 2.1f, p.z));
-            Debug::add_cube(glm::vec3(p.x, p.y + 2.2f, p.z));
-            Debug::add_cube(glm::vec3(p.x, p.y + 2.3f, p.z));
-            Debug::add_cube(glm::vec3(p.x, p.y + 2.4f, p.z));
+            Debug::add_cube(glm::vec3(p.x, p.y + 0.1f, p.z));
 
             const int end_x = p.x / world->X_SPACING;
             const int end_y = p.z / world->Z_SPACING;
@@ -258,7 +259,7 @@ int main()
               start_y = (start_y + 1);
               tries--;
             }
-
+            
             auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
             for (const auto &idx : path)
             {

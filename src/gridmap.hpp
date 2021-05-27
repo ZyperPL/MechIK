@@ -34,7 +34,7 @@ public:
     {
       const double occupied_factor = occupied.has_value() ? prop_cost(occupied.value()) : 0.0;
       const double normal_cost = 1.0 - fabs(glm::dot(normal, glm::vec3 { 0.0, 1.0, 0.0 }));
-      const double normal_factor = 2.7;
+      const double normal_factor = 2.7 - 2.7; // TODO debug remove
       return std::min(normal_cost * normal_factor + occupied_factor, 1.0);
     }
   };
