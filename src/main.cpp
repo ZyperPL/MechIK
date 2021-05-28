@@ -137,15 +137,15 @@ int main()
       {
         for (auto &&idx_node : world->grid_map->nodes)
         {
-          for (float zz = 0.0; zz < 1.0; zz+= 1.0)
-          for (float xx = 0.0; xx < 1.0; xx+= 1.0)
-          {
-            const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
-            const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
+          for (float zz = 0.0; zz < 1.0; zz += 1.0)
+            for (float xx = 0.0; xx < 1.0; xx += 1.0)
+            {
+              const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
+              const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
 
-            const glm::vec3 pos { x, world->ground->get_y(x, z), z };
-            Debug::add_cube(pos);
-          }
+              const glm::vec3 pos { x, world->ground->get_y(x, z), z };
+              Debug::add_cube("grid", pos);
+            }
         }
       }
     }
@@ -164,8 +164,26 @@ int main()
 
     if (ImGui::Begin("Mech"))
     {
-      Debug::mech_properties(*world->mech);
-      Debug::mech_debug(*world->mech);
+      if (ImGui::BeginTabBar("Mech", ImGuiTabBarFlags_None))
+      {
+        if (ImGui::BeginTabItem("Legs"))
+        {
+          Debug::mech_properties_legs(*world->mech);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Position"))
+        {
+          Debug::mech_properties_position(*world->mech);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Rotation"))
+        {
+          Debug::mech_properties_rotation(*world->mech);
+          ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+      }
     }
     ImGui::End();
 
@@ -237,6 +255,7 @@ int main()
 
         const glm::vec3 click_direction_world_space = glm::normalize(click_world_space_forward - click_world_space);
 
+        Debug::clear_cubes("path");
         glm::vec3 p = click_world_space;
         const size_t MAX_RAY_STEPS = 1000;
         for (size_t i = 0; i < MAX_RAY_STEPS; i++)
@@ -244,8 +263,8 @@ int main()
           p += click_direction_world_space * 3.0f;
           if (p.y < world->ground->get_y(p.x, p.z))
           {
-            Debug::add_cube(p);
-            Debug::add_cube(glm::vec3(p.x, p.y + 0.1f, p.z));
+            Debug::add_cube("path", p);
+            Debug::add_cube("path", glm::vec3(p.x, p.y + 0.1f, p.z));
 
             const int end_x = p.x / world->X_SPACING;
             const int end_y = p.z / world->Z_SPACING;
@@ -253,20 +272,20 @@ int main()
             int start_y = world->mech->get_position().z / world->Z_SPACING;
 
             size_t tries = 20;
-            while (tries > 0 && !world->grid_map->nodes.contains({start_x, start_y}))
+            while (tries > 0 && !world->grid_map->nodes.contains({ start_x, start_y }))
             {
               start_x = (start_x + 1);
               start_y = (start_y + 1);
               tries--;
             }
-            
+
             auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
             for (const auto &idx : path)
             {
               const float x = idx.first * world->X_SPACING;
               const float z = idx.second * world->Z_SPACING;
               const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
-              Debug::add_cube(pos);
+              Debug::add_cube("path", pos);
             }
             world->mech->set_path(std::move(path));
 

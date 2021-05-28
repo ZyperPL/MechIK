@@ -43,7 +43,14 @@ struct Debug
   }
 
   static void add_line(const glm::vec3 a, const glm::vec3 b) { lines.push_back({ a, b }); }
-  static void add_cube(const glm::vec3 a) { cubes.push_back(a); }
+  static void add_cube(const std::string type, const glm::vec3 a) { cubes.push_back({ type, a }); }
+
+  static void clear_cubes(const std::string type)
+  {
+    cubes.erase(
+      std::remove_if(std::begin(cubes), std::end(cubes), [&type](auto &p) { return p.first == type; }),
+      std::end(cubes));
+  }
 
   static void generate_line_buffer()
   {
@@ -107,13 +114,17 @@ struct Debug
     glUniformMatrix4fv(shader->get_uniform("P")->location, 1, GL_FALSE, glm::value_ptr(projection_matrix));
     shader->set_uniform<bool>("debug", true);
 
-    for (const auto &cp : cubes)
+    for (const auto &type_pos : cubes)
     {
-      const glm::mat4 model_matrix =
-        glm::translate(glm::mat4(1.0f), cp) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-      glUniformMatrix4fv(shader->get_uniform("M")->location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+      if (Debug::enabled(type_pos.first))
+      {
+        const glm::vec3 pos = type_pos.second;
+        const glm::mat4 model_matrix =
+          glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
+        glUniformMatrix4fv(shader->get_uniform("M")->location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-      cube->draw(*shader);
+        cube->draw(*shader);
+      }
     }
   }
 
@@ -125,14 +136,16 @@ struct Debug
   static void disable(const std::string key) { Debug::option.insert_or_assign(key, false); }
 
   static std::unordered_map<std::string, bool> option;
-
-  static void mech_properties(Mech &);
-  static void mech_debug(Mech &);
+  
+  static void mech_properties_rotation(Mech &);
+  static void mech_properties_position(Mech &);
+  static void mech_properties_legs(Mech &);
 
 private:
   static GLuint buffer;
   static std::shared_ptr<ZD::Model> cube;
   static std::vector<std::pair<glm::vec3, glm::vec3>> lines;
-  static std::vector<glm::vec3> cubes;
+  static std::vector<std::pair<std::string, glm::vec3>> cubes;
+  static std::unordered_map<std::string, bool> enabled_cubes;
   static std::shared_ptr<ZD::ShaderProgram> shader;
 };

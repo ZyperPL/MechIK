@@ -5,6 +5,7 @@
 #include "ZD/3rd/glm/gtx/quaternion.hpp"
 
 #include "world.hpp"
+#include "debug.hpp"
 
 glm::quat rotation_between_vectors(glm::vec3 start, glm::vec3 dest)
 {
@@ -106,17 +107,26 @@ Mech::Mech(glm::vec3 position)
   body->set_position(position);
 
   const size_t LEGS_NUM = 4;
-  for (size_t i = 0; i < LEGS_NUM; i++)
-  {
-    legs_b.push_back(std::make_unique<LegPart>(0));
-    legs_m.push_back(std::make_unique<LegPart>(1));
-    legs_e.push_back(std::make_unique<LegPart>(2));
-  }
+  set_legs_count(LEGS_NUM);
 
   shader = ZD::ShaderLoader()
              .add(ZD::File("shaders/model.vertex.glsl"), GL_VERTEX_SHADER)
              .add(ZD::File("shaders/model.fragment.glsl"), GL_FRAGMENT_SHADER)
              .compile();
+}
+
+void Mech::set_legs_count(const size_t n)
+{
+  legs_b.resize(n);
+  legs_m.resize(n);
+  legs_e.resize(n);
+
+  for (size_t i = 0; i < n; i++)
+  {
+    legs_b[i] = std::make_unique<LegPart>(0);
+    legs_m[i] = std::make_unique<LegPart>(1);
+    legs_e[i] = std::make_unique<LegPart>(2);
+  }
 }
 
 void Mech::step_path(const World &world)
@@ -151,13 +161,12 @@ void Mech::step_path(const World &world)
   }
 
   glm::vec3 move_vec = glm::normalize(next_path_point - position);
-  position += move_vec * 0.1f; // TODO: move speed parameter
-  position.y = world.ground->get_y(position.x, position.z) + 2.3f; // TODO: height param
+  position += move_vec * move_speed;
+  position.y = world.ground->get_y(position.x, position.z) + this->height;
 
   const glm::vec3 FORWARD { 0.0f, 0.0f, 1.0f };
   move_vec.y = 0.0f;
-  rotation =
-    rotate_lookat(rotation, rotation_between_vectors(FORWARD, move_vec), 0.02f); //TODO: rotation speed parameter
+  rotation = rotate_lookat(rotation, rotation_between_vectors(FORWARD, move_vec), rotation_speed);
 }
 
 void Mech::update([[maybe_unused]] const World &world)
@@ -168,26 +177,31 @@ void Mech::update([[maybe_unused]] const World &world)
   body->set_rotation(rotation);
 
   // find leg end target position
+  Debug::clear_cubes("leg_target");
+  Debug::clear_cubes("leg_current_target");
   const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
-    const float angle = angle_step / 2.0f + i * angle_step;
+    const float angle = angle_offset * (angle_step / 2.0f) + i * angle_step;
 
     const glm::quat target_rotation = rotation * glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
     auto target_pos = position + rotation * glm::vec3(0.0f, 0.0f, 2.0f) + target_rotation * glm::vec3(3.1f, 0.0f, 0.0f);
     target_pos.y = world.ground->get_y(target_pos.x, target_pos.z) + 0.2f;
+    Debug::add_cube("leg_target", target_pos);
 
     if (glm::distance(target_pos, legs_e[i]->target_position) > 3.1f)
     {
       target_pos =
-        (position + rotation * glm::vec3 { 0.0f, 0.0f, 2.0f }) + target_rotation * glm::vec3 { 3.1f, 0.0f, 0.0f };
+        (position + rotation * glm::vec3 { 0.0f, 0.0f, 2.2f }) + target_rotation * glm::vec3 { 3.1f, 0.0f, 0.0f };
       target_pos.y = world.ground->get_y(target_pos.x, target_pos.z) + 0.2f;
       legs_e[i]->target_position = target_pos;
     }
+
+    Debug::add_cube("leg_current_target", legs_e[i]->target_position);
   }
 
-  const float RSPEED = 0.003f;
-  size_t iterations = 30;
+  const float RSPEED = 0.004f;
+  size_t iterations = 15;
   while (iterations-- > 0)
   {
     // inverse
@@ -197,7 +211,9 @@ void Mech::update([[maybe_unused]] const World &world)
       //dir_e.z = 0.0f;
       dir_e = glm::normalize(dir_e);
       glm::vec3 leg_e_target_position = legs_e[i]->target_position - dir_e * 1.3f;
-      leg_e_target_position.y = world.ground->get_y(leg_e_target_position.x, leg_e_target_position.z);
+      const float world_y = world.ground->get_y(leg_e_target_position.x, leg_e_target_position.z);
+      if (leg_e_target_position.y > world_y + 1.0f)
+        leg_e_target_position.y = world_y + 1.0;
       legs_e[i]->set_position(leg_e_target_position);
       legs_e[i]->set_rotation(rotate_lookat(
         legs_e[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_e), RSPEED));
