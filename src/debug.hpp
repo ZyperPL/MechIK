@@ -118,9 +118,16 @@ struct Debug
     {
       if (Debug::enabled(type_pos.first))
       {
+        float scale = 0.2f;
+        if (type_pos.first == "Path" || type_pos.first == "Grid")
+        {
+          const float dst = glm::distance(view.get_position(), type_pos.second);
+          scale = 0.1f + dst * 0.004f;
+        }
+
         const glm::vec3 pos = type_pos.second;
         const glm::mat4 model_matrix =
-          glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
+          glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f) * scale);
         glUniformMatrix4fv(shader->get_uniform("M")->location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
         cube->draw(*shader);
@@ -136,7 +143,7 @@ struct Debug
   static void disable(const std::string key) { Debug::option.insert_or_assign(key, false); }
 
   static std::unordered_map<std::string, bool> option;
-  
+
   static void mech_properties_rotation(Mech &);
   static void mech_properties_position(Mech &);
   static void mech_properties_legs(Mech &);
