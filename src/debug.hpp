@@ -42,7 +42,18 @@ struct Debug
                       .compile();
   }
 
-  static void add_line(const glm::vec3 a, const glm::vec3 b) { lines.push_back({ a, b }); }
+  static void add_line(const std::string type, const glm::vec3 a, const glm::vec3 b)
+  {
+    lines.push_back({ type, { a, b } });
+  }
+
+  static void clear_lines(const std::string type)
+  {
+    lines.erase(
+      std::remove_if(std::begin(lines), std::end(lines), [&type](auto &p) { return p.first == type; }),
+      std::end(lines));
+  }
+
   static void add_cube(const std::string type, const glm::vec3 a) { cubes.push_back({ type, a }); }
 
   static void clear_cubes(const std::string type)
@@ -52,36 +63,52 @@ struct Debug
       std::end(cubes));
   }
 
-  static void generate_line_buffer()
+  static GLuint generate_line_buffer()
   {
+    //TODO: rewrite to only use 2 vertices
     std::vector<float> data;
     const size_t size = lines.size() * 3 * 2;
-    data.reserve(size);
 
-    for (const auto &line_pair : lines)
+    for (const auto &type_line_pair : lines)
     {
-      data.push_back(line_pair.first.x);
-      data.push_back(line_pair.first.y);
-      data.push_back(line_pair.first.z);
-      data.push_back(line_pair.second.x);
-      data.push_back(line_pair.second.y);
-      data.push_back(line_pair.second.z);
+      const auto &type = type_line_pair.first;
+      const auto &line_pair = type_line_pair.second;
+
+      if (Debug::enabled(type))
+      {
+        data.push_back(line_pair.first.x);
+        data.push_back(line_pair.first.y);
+        data.push_back(line_pair.first.z);
+        data.push_back(line_pair.second.x);
+        data.push_back(line_pair.second.y);
+        data.push_back(line_pair.second.z);
+      }
     }
-    assert(data.size() == size);
+    assert(data.size() <= size);
+
+    if (data.size() <= 1)
+      return 0;
 
     glBindBuffer(GL_ARRAY_BUFFER, Debug::buffer);
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
+
+    return data.size();
   }
 
   static void draw_lines(const ZD::View &view)
   {
-    static size_t a = 1000;
-    a++;
-    if (a > 500)
+    if (lines.size() < 2)
+      return;
+
+    static size_t gen_counter = 1000;
+    static size_t lines_buffer_size = 0;
+    if (gen_counter++ > 60)
     {
-      generate_line_buffer();
-      a = 0;
+      gen_counter = 0;
+      lines_buffer_size = generate_line_buffer();
     }
+    if (lines_buffer_size < 2)
+      return;
 
     Debug::shader->use();
 
@@ -151,7 +178,7 @@ struct Debug
 private:
   static GLuint buffer;
   static std::shared_ptr<ZD::Model> cube;
-  static std::vector<std::pair<glm::vec3, glm::vec3>> lines;
+  static std::vector<std::pair<std::string, std::pair<glm::vec3, glm::vec3>>> lines;
   static std::vector<std::pair<std::string, glm::vec3>> cubes;
   static std::unordered_map<std::string, bool> enabled_cubes;
   static std::shared_ptr<ZD::ShaderProgram> shader;

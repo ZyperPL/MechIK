@@ -33,8 +33,7 @@ Ground::Ground()
       glm::vec3 n = get_n(x, z);
       model->add_normal(n.x, n.y, n.z);
 
-      //DBG_ENABLE("Ground Normals");
-      DBG("Ground Normals", Debug::add_line(glm::vec3 { x, y0, z }, glm::vec3 { x, y0, z } + n * 10.0f));
+      Debug::add_line("Ground Normals", glm::vec3 { x, y0, z }, glm::vec3 { x, y0, z } + n * 10.0f);
 
       model->add_vertex(x + UNIT, y1, z);
       model->add_uv(1.0, 0.0);

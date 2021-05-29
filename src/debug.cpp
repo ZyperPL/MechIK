@@ -2,7 +2,7 @@
 #include "3rd/imgui/imgui.h"
 #include "mech.hpp"
 
-std::vector<std::pair<glm::vec3, glm::vec3>> Debug::lines;
+std::vector<std::pair<std::string, std::pair<glm::vec3, glm::vec3>>> Debug::lines;
 std::vector<std::pair<std::string, glm::vec3>> Debug::cubes;
 GLuint Debug::buffer = 0;
 std::shared_ptr<ZD::Model> Debug::cube;
@@ -185,7 +185,8 @@ void Debug::mech_properties_legs(Mech &mech)
   if (ImGui::Button("+"))
     ik_iterations += 1;
 
-  if (ik_iterations < 0) ik_iterations = 1;
+  if (ik_iterations < 0)
+    ik_iterations = 1;
   mech.ik_iterations = static_cast<size_t>(ik_iterations);
   ImGui::PopID();
 
