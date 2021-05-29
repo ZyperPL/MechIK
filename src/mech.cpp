@@ -117,6 +117,14 @@ Mech::Mech(glm::vec3 position)
 
 void Mech::set_legs_count(const size_t n)
 {
+  if (n <= 0 || n > 16384)
+  {
+    legs_b.clear();
+    legs_m.clear();
+    legs_e.clear();
+    return;
+  }
+  
   legs_b.resize(n);
   legs_m.resize(n);
   legs_e.resize(n);
@@ -177,8 +185,8 @@ void Mech::update([[maybe_unused]] const World &world)
   body->set_rotation(rotation);
 
   // find leg end target position
-  Debug::clear_cubes("leg_target");
-  Debug::clear_cubes("leg_current_target");
+  Debug::clear_cubes("Leg Target");
+  Debug::clear_cubes("Leg Current Target");
   const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
@@ -187,7 +195,7 @@ void Mech::update([[maybe_unused]] const World &world)
     const glm::quat target_rotation = rotation * glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
     auto target_pos = position + rotation * glm::vec3(0.0f, 0.0f, 2.0f) + target_rotation * glm::vec3(3.1f, 0.0f, 0.0f);
     target_pos.y = world.ground->get_y(target_pos.x, target_pos.z) + 0.2f;
-    Debug::add_cube("leg_target", target_pos);
+    Debug::add_cube("Leg Target", target_pos);
 
     if (glm::distance(target_pos, legs_e[i]->target_position) > 3.1f)
     {
@@ -197,20 +205,23 @@ void Mech::update([[maybe_unused]] const World &world)
       legs_e[i]->target_position = target_pos;
     }
 
-    Debug::add_cube("leg_current_target", legs_e[i]->target_position);
+    Debug::add_cube("Leg Current Target", legs_e[i]->target_position);
   }
 
-  const float RSPEED = 0.004f;
-  size_t iterations = 15;
+  const float RSPEED = this->legs_rotation_speed / static_cast<float>(this->ik_iterations);
+  const float E_LENGTH = 1.31f;
+  const float M_LENGTH = 1.04f;
+  const float B_LENGTH = 1.00f;
+  size_t iterations = this->ik_iterations;
   while (iterations-- > 0)
   {
     // inverse
     for (size_t i = 0; i < legs_b.size(); ++i)
     {
       glm::vec3 dir_e = glm::normalize(legs_e[i]->target_position - legs_e[i]->get_position());
-      //dir_e.z = 0.0f;
+      dir_e *= legs_e[i]->rotation_scalar;
       dir_e = glm::normalize(dir_e);
-      glm::vec3 leg_e_target_position = legs_e[i]->target_position - dir_e * 1.3f;
+      glm::vec3 leg_e_target_position = legs_e[i]->target_position - dir_e * E_LENGTH;
       const float world_y = world.ground->get_y(leg_e_target_position.x, leg_e_target_position.z);
       if (leg_e_target_position.y > world_y + 1.0f)
         leg_e_target_position.y = world_y + 1.0;
@@ -219,16 +230,16 @@ void Mech::update([[maybe_unused]] const World &world)
         legs_e[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_e), RSPEED));
 
       glm::vec3 dir_m = glm::normalize(legs_e[i]->get_position() - legs_m[i]->get_position());
-      //dir_m.z = 0.0f;
+      dir_m *= legs_m[i]->rotation_scalar;
       dir_m = glm::normalize(dir_m);
-      legs_m[i]->set_position(legs_e[i]->get_position() - dir_m * 1.04f);
+      legs_m[i]->set_position(legs_e[i]->get_position() - dir_m * M_LENGTH);
       legs_m[i]->set_rotation(rotate_lookat(
         legs_m[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_m), RSPEED));
 
       glm::vec3 dir_b = glm::normalize(legs_m[i]->get_position() - legs_b[i]->get_position());
-      dir_b.y = 0.0f;
+      dir_b *= legs_b[i]->rotation_scalar;
       dir_b = glm::normalize(dir_b);
-      legs_b[i]->set_position(legs_m[i]->get_position() - dir_b * 1.0f);
+      legs_b[i]->set_position(legs_m[i]->get_position() - dir_b * B_LENGTH);
       auto b_quat = rotate_lookat(
         legs_b[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0 }, dir_b), RSPEED);
       legs_b[i]->set_rotation(b_quat);
@@ -237,13 +248,13 @@ void Mech::update([[maybe_unused]] const World &world)
     // forward
     for (size_t i = 0; i < legs_b.size(); ++i)
     {
-      const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -1.0f, 0.0f };
+      const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -B_LENGTH, 0.0f };
       legs_b[i]->set_position(b_translate);
 
-      const glm::vec3 m_translate = b_translate + legs_b[i]->get_rotation() * glm::vec3 { 1.04f, 0.0f, 0.0f };
+      const glm::vec3 m_translate = b_translate + legs_b[i]->get_rotation() * glm::vec3 { M_LENGTH, 0.0f, 0.0f };
       legs_m[i]->set_position(m_translate);
 
-      const glm::vec3 e_translate = m_translate + legs_m[i]->get_rotation() * glm::vec3 { 1.3f, 0.0f, 0.0f };
+      const glm::vec3 e_translate = m_translate + legs_m[i]->get_rotation() * glm::vec3 { E_LENGTH, 0.0f, 0.0f };
       legs_e[i]->set_position(e_translate);
     }
   }

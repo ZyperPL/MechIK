@@ -116,6 +116,20 @@ int main()
 
   assert(world->mech);
 
+  // debug grid
+  for (auto &&idx_node : world->grid_map->nodes)
+  {
+    for (float zz = 0.0; zz < 1.0; zz += 1.0)
+      for (float xx = 0.0; xx < 1.0; xx += 1.0)
+      {
+        const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
+        const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
+
+        const glm::vec3 pos { x, world->ground->get_y(x, z), z };
+        Debug::add_cube("Grid", pos);
+      }
+  }
+
   printf("Ready.\n");
   while (window->is_open())
   {
@@ -132,22 +146,6 @@ int main()
       ImGui::Text("Options available: %lu", Debug::option.size());
       for (auto &&option : Debug::option)
         ImGui::Checkbox(option.first.data(), &option.second);
-
-      if (ImGui::Button("Show graph grid"))
-      {
-        for (auto &&idx_node : world->grid_map->nodes)
-        {
-          for (float zz = 0.0; zz < 1.0; zz += 1.0)
-            for (float xx = 0.0; xx < 1.0; xx += 1.0)
-            {
-              const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
-              const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
-
-              const glm::vec3 pos { x, world->ground->get_y(x, z), z };
-              Debug::add_cube("grid", pos);
-            }
-        }
-      }
     }
     ImGui::End();
 
@@ -255,7 +253,7 @@ int main()
 
         const glm::vec3 click_direction_world_space = glm::normalize(click_world_space_forward - click_world_space);
 
-        Debug::clear_cubes("path");
+        Debug::clear_cubes("Path");
         glm::vec3 p = click_world_space;
         const size_t MAX_RAY_STEPS = 1000;
         for (size_t i = 0; i < MAX_RAY_STEPS; i++)
@@ -263,8 +261,8 @@ int main()
           p += click_direction_world_space * 3.0f;
           if (p.y < world->ground->get_y(p.x, p.z))
           {
-            Debug::add_cube("path", p);
-            Debug::add_cube("path", glm::vec3(p.x, p.y + 0.1f, p.z));
+            Debug::add_cube("Path", p);
+            Debug::add_cube("Path", glm::vec3(p.x, p.y + 0.1f, p.z));
 
             const int end_x = p.x / world->X_SPACING;
             const int end_y = p.z / world->Z_SPACING;
@@ -285,7 +283,7 @@ int main()
               const float x = idx.first * world->X_SPACING;
               const float z = idx.second * world->Z_SPACING;
               const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
-              Debug::add_cube("path", pos);
+              Debug::add_cube("Path", pos);
             }
             world->mech->set_path(std::move(path));
 

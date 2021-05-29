@@ -20,6 +20,7 @@ struct LegPart : public ZD::Entity
 
   const size_t part_index;
   glm::vec3 target_position { 0.0f, 0.0f, 0.0f };
+  glm::vec3 rotation_scalar { 1.0f, 1.0f, 1.0f };
 };
 
 class Mech : public ZD::Entity
@@ -58,6 +59,8 @@ private:
   float move_speed { 0.1f };
   float rotation_speed { 0.2f };
   float angle_offset { 1.0f };
+  float legs_rotation_speed { 0.08f };
+  size_t ik_iterations { 20 };
 
   void step_path(const World &world);
 
