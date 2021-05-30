@@ -266,12 +266,12 @@ void Mech::render(ZD::View &view, [[maybe_unused]] const World &world)
   body->set_position(get_position());
   body->set_rotation(get_rotation());
   body->set_scale(get_scale());
-  body->draw(*shader, view);
+  body->render(*shader, view);
 
   for (size_t i = 0; i < legs_b.size(); ++i)
   {
-    legs_b[i]->draw(*shader, view);
-    legs_m[i]->draw(*shader, view);
-    legs_e[i]->draw(*shader, view);
+    legs_b[i]->render(*shader, view);
+    legs_m[i]->render(*shader, view);
+    legs_e[i]->render(*shader, view);
   }
 }

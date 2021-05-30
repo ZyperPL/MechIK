@@ -117,5 +117,5 @@ void Prop::draw(const ZD::View &view, const World &world)
   shader.set_uniform<float>("fog_scattering", 1.3f);
   shader.set_uniform<float>("fog_extinction", 0.001f);
 
-  Entity::draw(shader, view);
+  Entity::render(shader, view);
 }

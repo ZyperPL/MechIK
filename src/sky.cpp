@@ -34,5 +34,5 @@ void Sky::render(const ZD::View &view)
   position.y = view.get_position().y + 200.0f;
   position.z = view.get_position().z;
 
-  draw(*shader, view);
+  Entity::render(*shader, view);
 }

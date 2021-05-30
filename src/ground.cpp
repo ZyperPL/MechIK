@@ -88,7 +88,7 @@ void Ground::draw(const ZD::View &view)
   shader->set_uniform<glm::vec3>("fog_color", fog_color);
   shader->set_uniform<float>("fog_scattering", 1.25);
   shader->set_uniform<float>("fog_extinction", 0.001);
-  Entity::draw(*shader, view);
+  Entity::render(*shader, view);
 }
 
 float Ground::get_y(const float x, const float z) const
