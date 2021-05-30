@@ -28,21 +28,22 @@ Ground::Ground()
       const float y2 = get_y(x + UNIT, z + UNIT);
       const float y3 = get_y(x, z + UNIT);
 
-      model->add_vertex(x, y0, z);
-      model->add_uv(0.0, 0.0);
       glm::vec3 n = get_n(x, z);
-      model->add_normal(n.x, n.y, n.z);
-
       Debug::add_line("Ground Normals", glm::vec3 { x, y0, z }, glm::vec3 { x, y0, z } + n * 10.0f);
+
+      n = get_n(x + UNIT, z + UNIT);
+      model->add_vertex(x + UNIT, y2, z + UNIT);
+      model->add_uv(1.0, 1.0);
+      model->add_normal(n.x, n.y, n.z);
 
       model->add_vertex(x + UNIT, y1, z);
       model->add_uv(1.0, 0.0);
       n = get_n(x + UNIT, z);
       model->add_normal(n.x, n.y, n.z);
 
-      model->add_vertex(x + UNIT, y2, z + UNIT);
-      model->add_uv(1.0, 1.0);
-      n = get_n(x + UNIT, z + UNIT);
+      model->add_vertex(x, y0, z);
+      model->add_uv(0.0, 0.0);
+      n = get_n(x, z);
       model->add_normal(n.x, n.y, n.z);
 
       model->add_vertex(x, y0, z);
@@ -115,7 +116,7 @@ float Ground::get_y(const float x, const float z) const
   const float y00 = get_noise_y(gx, gz);
   const float y10 = px > pz ? get_noise_y(gx + UNIT, gz) : get_noise_y(gx, gz + UNIT);
   const float y11 = get_noise_y(gx + UNIT, gz + UNIT);
-  
+
   if ((px == 1.0 && pz == 0.0) || (px == 0.0 && pz == 1.0))
     return y10;
 

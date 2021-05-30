@@ -102,7 +102,7 @@ struct Debug
 
     static size_t gen_counter = 1000;
     static size_t lines_buffer_size = 0;
-    if (gen_counter++ > 60)
+    if (gen_counter++ > 30)
     {
       gen_counter = 0;
       lines_buffer_size = generate_line_buffer();

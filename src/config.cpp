@@ -36,23 +36,15 @@ Config::Config(const std::string file_name)
     k = "";
   };
 
-  struct PropValues
-  {
-    std::unordered_map<std::string, std::string> values;
-  };
-  std::vector<PropValues> props_config;
-  struct
-  {
-    std::unordered_map<std::string, std::string> values;
-  } world_config;
-
   std::string key {}, value {};
 
-  auto add_key_value = [&section, &props_config, &world_config](const std::string key, const std::string value) {
+  world_config = std::make_shared<ConfigKeysValues>();
+
+  auto add_key_value = [&section, this](const std::string key, const std::string value) {
     if (section == World)
-      world_config.values.insert({ key, value });
+      world_config->insert({ key, value });
     else if (section == Prop)
-      props_config.back().values.insert({ key, value });
+      props_config.back()->insert({ key, value });
   };
 
   char ch;
@@ -82,7 +74,7 @@ Config::Config(const std::string file_name)
           mode = Key;
 
           if (section == Prop)
-            props_config.push_back({});
+            props_config.push_back(std::make_shared<ConfigKeysValues>());
         }
         else
           key += ch;
@@ -111,17 +103,19 @@ Config::Config(const std::string file_name)
     };
   }
 
+#ifdef PRINT_CONFIG_VALUES
   for (const auto &x : props_config)
   {
     puts("PROP");
-    for (const auto &kv : x.values)
+    for (const auto &kv : x)
     {
       printf("%s: %s\n", kv.first.c_str(), kv.second.c_str());
     }
   }
   puts("WORLD");
-  for (const auto &kv : world_config.values)
+  for (const auto &kv : world_config)
   {
     printf("%s: %s\n", kv.first.c_str(), kv.second.c_str());
   }
+#endif
 }

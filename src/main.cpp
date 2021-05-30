@@ -96,20 +96,20 @@ int main()
 
   Debug::init();
 
-  std::shared_ptr<Config> cfg = std::make_shared<Config>("config.ini");
+  std::shared_ptr<Config> cfg = std::make_shared<Config>("world.ini");
 
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
   ImGuiIO &imgui_io = ImGui::GetIO();
 
   world->ground = std::make_unique<Ground>();
   world->ground->set_fog_color(world->sky_color);
-  world->generate();
+  world->generate(*cfg);
 
   Sky sky(world->sky_color);
 
   ZD::View view(
     ZD::Camera::PerspectiveParameters(
-      ZD::Camera::Fov::from_degrees(90.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.1, 800.0)),
+      ZD::Camera::Fov::from_degrees(90.0), WINDOW_WIDTH / WINDOW_HEIGHT, ZD::Camera::ClippingPlane(0.1, 900.0)),
     glm::vec3(0.0, 0.0, 0.0));
 
   glm::vec3 camera_position { 0.0, 2.0, 0.0 };
@@ -136,7 +136,7 @@ int main()
     renderer.clear();
     glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 1.0);
     renderer.enable_depth_test(GL_LEQUAL);
-    renderer.disable_cull_face();
+    renderer.enable_cull_face();
     renderer.update();
     imgui_frame();
     world->mech->update(*world);
@@ -154,7 +154,12 @@ int main()
     {
       ImGui::Text("Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
       if (ImGui::Button("Set origin to center"))
+      {
         camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
+        view.set_target({10.0f, 10.0f, 10.0f});
+        view.set_rotation({0.0f, 0.0f, 0.0f});
+        view.set_position({0.0f, 0.0f, 0.0f});
+      }
 
       ImGui::Checkbox("Noclip", &camera_noclip);
     }
@@ -222,15 +227,15 @@ int main()
     for (auto &&prop : world->props)
     {
       // non transparent
-      if (!prop.has_transulency)
-        prop.draw(view, *world);
+      if (!prop->has_transulency)
+        prop->draw(view, *world);
     }
     world->ground->draw(view);
     for (auto &&prop : world->props)
     {
       // transparent
-      if (prop.has_transulency)
-        prop.draw(view, *world);
+      if (prop->has_transulency)
+        prop->draw(view, *world);
     }
 
     if (!imgui_io.WantCaptureMouse)
