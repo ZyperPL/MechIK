@@ -6,14 +6,20 @@
 #include "3rd/stb_perlin.h"
 
 #include "debug.hpp"
+#include "config.hpp"
 
-Ground::Ground()
+Ground::Ground(const ConfigKeysValues &world_config)
 : ZD::Entity({ 0.0, 0.0, 0.0 }, {}, { 1.0, 1.0, 1.0 })
 {
   shader = ZD::ShaderLoader()
              .add(ZD::File("shaders/ground.vertex.glsl"), GL_VERTEX_SHADER)
              .add(ZD::File("shaders/ground.fragment.glsl"), GL_FRAGMENT_SHADER)
              .compile();
+
+  stones_factor = world_config.get_float("StonesFactor", stones_factor);
+  grass_factor = world_config.get_float("GrassFactor", grass_factor);
+  stones_blur = world_config.get_float("StonesBlur", stones_blur);
+  grass_blur = world_config.get_float("GrassBlur", grass_blur);
 
   auto model = ZD::Model::create();
 
@@ -88,6 +94,10 @@ void Ground::draw(const ZD::View &view)
   shader->set_uniform<glm::vec3>("fog_color", fog_color);
   shader->set_uniform<float>("fog_scattering", 1.25);
   shader->set_uniform<float>("fog_extinction", 0.001);
+  shader->set_uniform<float>("stones_factor", stones_factor);
+  shader->set_uniform<float>("grass_factor", grass_factor);
+  shader->set_uniform<float>("stones_blur", stones_blur);
+  shader->set_uniform<float>("grass_blur", grass_blur);
   Entity::render(*shader, view);
 }
 
@@ -113,6 +123,7 @@ float Ground::get_y(const float x, const float z) const
   if (px == 0.0 && pz == 0.0)
     return get_noise_y(gx, gz);
 
+  // interpolation for fractional values
   const float y00 = get_noise_y(gx, gz);
   const float y10 = px > pz ? get_noise_y(gx + UNIT, gz) : get_noise_y(gx, gz + UNIT);
   const float y11 = get_noise_y(gx + UNIT, gz + UNIT);

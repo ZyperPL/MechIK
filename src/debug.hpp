@@ -10,6 +10,7 @@
 #include <algorithm>
 
 class Mech;
+class Ground;
 struct Debug;
 
 #ifdef DEBUG
@@ -175,6 +176,7 @@ struct Debug
   static void mech_properties_position(Mech &);
   static void mech_properties_legs(Mech &);
 
+  static void ground_properties(Ground &);
 private:
   static GLuint buffer;
   static std::shared_ptr<ZD::Model> cube;

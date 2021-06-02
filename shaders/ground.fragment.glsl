@@ -26,6 +26,12 @@ uniform float fog_scattering = 1.0;
 uniform float fog_extinction = 0.0001;
 uniform vec2 texture_wrap;
 
+uniform float stones_factor = 2.0f;
+uniform float grass_factor = 32.0f;
+
+uniform float stones_blur = 20.0f;
+uniform float grass_blur = 32.0f;
+
 out vec4 fragColor;
 
 void main()
@@ -33,10 +39,10 @@ void main()
   vec2 nuv = uv * texture_wrap;
   float dst = length(position_camera_space);
 
-  float e = clamp((32.0 + position_model_space.y) / 32.0, 0.0, 1.0);
+  float e = clamp((grass_factor + position_model_space.y) / grass_blur, 0.0, 1.0);
   vec4 t1 = texture(sampler, nuv);
   vec4 t2 = texture(sampler2, nuv) * e + (1.0 - e) * texture(sampler3, nuv);
-  e = clamp((position_model_space.y + 2.0) / 20.0, 0.0, 1.0);
+  e = clamp((position_model_space.y + stones_factor) / stones_blur, 0.0, 1.0);
   vec4 tex = t1 * e + t2 * (1.0 - e);
 
   const vec3 light_dir = normalize(vec3(0.2, 1.0, -0.3));

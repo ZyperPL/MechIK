@@ -101,7 +101,7 @@ int main()
   imgui_setup(*static_cast<ZD::Window_GLFW *>(window.get()));
   ImGuiIO &imgui_io = ImGui::GetIO();
 
-  world->ground = std::make_unique<Ground>();
+  world->ground = std::make_unique<Ground>(*cfg->get_world_config());
   world->ground->set_fog_color(world->sky_color);
   world->generate(*cfg);
 
@@ -150,18 +150,31 @@ int main()
     ImGui::End();
 
     static bool camera_noclip = false;
-    if (ImGui::Begin("Camera"))
+    if (ImGui::Begin("World"))
     {
-      ImGui::Text("Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
-      if (ImGui::Button("Set origin to center"))
+      if (ImGui::BeginTabBar("World", ImGuiTabBarFlags_None))
       {
-        camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
-        view.set_target({10.0f, 10.0f, 10.0f});
-        view.set_rotation({0.0f, 0.0f, 0.0f});
-        view.set_position({0.0f, 0.0f, 0.0f});
-      }
+        if (ImGui::BeginTabItem("Ground"))
+        {
+          Debug::ground_properties(*world->ground);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Camera"))
+        {
+          ImGui::Text("Camera position: %6.4f, %6.4f, %6.4f", camera_position.x, camera_position.y, camera_position.z);
+          if (ImGui::Button("Set origin to center"))
+          {
+            camera_position = glm::vec3 { 0.0f, 0.0f, 0.0f };
+            view.set_target({ 10.0f, 10.0f, 10.0f });
+            view.set_rotation({ 0.0f, 0.0f, 0.0f });
+            view.set_position({ 0.0f, 0.0f, 0.0f });
+          }
 
-      ImGui::Checkbox("Noclip", &camera_noclip);
+          ImGui::Checkbox("Noclip", &camera_noclip);
+          ImGui::EndTabItem();
+        }
+      }
+      ImGui::EndTabBar();
     }
     ImGui::End();
 
@@ -223,7 +236,7 @@ int main()
 
     sky.render(view);
 
-    world->mech->render(view, *world);
+    world->mech->draw(view, *world);
     for (auto &&prop : world->props)
     {
       // non transparent

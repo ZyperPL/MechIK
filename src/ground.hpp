@@ -2,10 +2,13 @@
 
 #include "ZD/Entity.hpp"
 
+struct Debug;
+struct ConfigKeysValues;
+
 class Ground : public ZD::Entity
 {
 public:
-  Ground();
+  Ground(const ConfigKeysValues &world_config);
 
   std::shared_ptr<ZD::ShaderProgram> get_shader_program() const { return shader; }
 
@@ -27,7 +30,14 @@ public:
   }
 
   const float UNIT { 10.0f };
+
 private:
   std::shared_ptr<ZD::ShaderProgram> shader;
   glm::vec3 fog_color { 0.88, 0.94, 1.0 };
+  float stones_factor { 2.0f };
+  float grass_factor { 32.0f };
+  float stones_blur { 20.0f };
+  float grass_blur { 32.0f };
+
+  friend struct Debug;
 };
