@@ -119,8 +119,8 @@ int main()
   // debug grid
   for (auto &&idx_node : world->grid_map->nodes)
   {
-    for (float zz = 0.0; zz < 1.0; zz += 1.0)
-      for (float xx = 0.0; xx < 1.0; xx += 1.0)
+    for (float zz = 0.0; zz < 1.0; zz += 1.0f)
+      for (float xx = 0.0; xx < 1.0; xx += 1.0f)
       {
         const float x = xx * world->ground->UNIT + idx_node.first.first * world->X_SPACING;
         const float z = zz * world->ground->UNIT + idx_node.first.second * world->Z_SPACING;
@@ -246,7 +246,7 @@ int main()
     if (camera_follow)
     {
       const float dst_to_target = glm::distance(camera_position, view.get_target());
-      if (dst_to_target != camera_target_distance && dst_to_target > 10.0)
+      if (dst_to_target != camera_target_distance && dst_to_target > 1.0)
       {
         camera_position += camera_forward(view.get_position(), world->mech->get_position()) * (dst_to_target - camera_target_distance);
       }
@@ -292,20 +292,22 @@ int main()
         Debug::clear_cubes("Path");
         glm::vec3 p = click_world_space;
         const size_t MAX_RAY_STEPS = 1000;
+        const float RAY_STEP = 1.0f;
         for (size_t i = 0; i < MAX_RAY_STEPS; i++)
         {
-          p += click_direction_world_space * 3.0f;
-          if (p.y < world->ground->get_y(p.x, p.z))
+          p += click_direction_world_space * RAY_STEP;
+          const float click_y = world->ground->get_y(p.x, p.z);
+          if (p.y < click_y)
           {
             Debug::add_cube("Path", p);
-            Debug::add_cube("Path", glm::vec3(p.x, p.y + 0.1f, p.z));
+            Debug::add_cube("Path", glm::vec3(p.x, click_y, p.z));
 
             const int end_x = p.x / world->X_SPACING;
             const int end_y = p.z / world->Z_SPACING;
             int start_x = world->mech->get_position().x / world->X_SPACING;
             int start_y = world->mech->get_position().z / world->Z_SPACING;
 
-            size_t tries = 20;
+            size_t tries = 30;
             while (tries > 0 && !world->grid_map->nodes.contains({ start_x, start_y }))
             {
               start_x = (start_x + 1);
@@ -318,7 +320,7 @@ int main()
             {
               const float x = idx.first * world->X_SPACING;
               const float z = idx.second * world->Z_SPACING;
-              const glm::vec3 pos { x, world->ground->get_y(x, z) + 3.0f, z };
+              const glm::vec3 pos { x, world->ground->get_y(x, z), z };
               Debug::add_cube("Path", pos);
             }
             world->mech->set_path(std::move(path));

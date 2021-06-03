@@ -6,6 +6,7 @@
 
 #include "world.hpp"
 #include "debug.hpp"
+#include "ground.hpp"
 
 glm::quat rotation_between_vectors(glm::vec3 start, glm::vec3 dest)
 {
@@ -89,6 +90,21 @@ LegPart::LegPart(const size_t part_index)
   }
   add_model(model);
 }
+  
+void LegPart::ground_collision(Ground &ground)
+{
+  const auto e = end();
+  const float gye = ground.get_y(e.x, e.z);
+  if (e.y - 0.5f < gye)
+  {
+    const float dst = glm::distance({e.x, gye, e.z}, e);
+    position -= rotation * forward() * dst;
+  }
+    
+  const float gy = ground.get_y(position.x, position.z);
+  if (position.y < gy + 1.0f)
+    position.y = gy + 1.0f;
+}
 
 Mech::Mech(glm::vec3 position)
 : ZD::Entity(position, {}, { 1.0, 1.0, 1.0 })
@@ -124,7 +140,7 @@ void Mech::set_legs_count(const size_t n)
     legs_e.clear();
     return;
   }
-  
+
   legs_b.resize(n);
   legs_m.resize(n);
   legs_e.resize(n);
@@ -168,104 +184,145 @@ void Mech::step_path(const World &world)
     return;
   }
 
-  glm::vec3 move_vec = glm::normalize(next_path_point - position);
-  position += move_vec * move_speed;
-  position.y = world.ground->get_y(position.x, position.z) + this->height;
+  auto move_dir = glm::normalize(next_path_point - position);
+  move_vec = move_dir * move_speed;
+  position += move_vec;
 
   const glm::vec3 FORWARD { 0.0f, 0.0f, 1.0f };
-  move_vec.y = 0.0f;
-  rotation = rotate_lookat(rotation, rotation_between_vectors(FORWARD, move_vec), rotation_speed);
+  move_dir.y = 0.0f;
+  rotation = rotate_lookat(rotation, rotation_between_vectors(FORWARD, glm::normalize(move_dir)), rotation_speed);
 }
 
 void Mech::update([[maybe_unused]] const World &world)
 {
   // move and rotate based on path
   step_path(world);
-  body->set_position(position);
-  body->set_rotation(rotation);
 
-  // find leg end target position
-  Debug::clear_cubes("Leg Target");
-  Debug::clear_cubes("Leg Current Target");
-  const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
-  for (size_t i = 0; i < legs_b.size(); ++i)
-  {
-    const float angle = angle_offset * (angle_step / 2.0f) + i * angle_step;
+  position.y = world.ground->get_y(position.x, position.z) + height;
 
-    const glm::quat target_rotation = rotation * glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
-    auto target_pos = position + rotation * glm::vec3(0.0f, 0.0f, 2.0f) + target_rotation * glm::vec3(3.1f, 0.0f, 0.0f);
-    target_pos.y = world.ground->get_y(target_pos.x, target_pos.z) + 0.2f;
-    Debug::add_cube("Leg Target", target_pos);
+  if (legs_b.empty())
+    return;
 
-    if (glm::distance(target_pos, legs_e[i]->target_position) > 3.1f)
-    {
-      target_pos =
-        (position + rotation * glm::vec3 { 0.0f, 0.0f, 2.2f }) + target_rotation * glm::vec3 { 3.1f, 0.0f, 0.0f };
-      target_pos.y = world.ground->get_y(target_pos.x, target_pos.z) + 0.2f;
-      legs_e[i]->target_position = target_pos;
-    }
+  // animate legs
+  calculate_legs(world);
 
-    Debug::add_cube("Leg Current Target", legs_e[i]->target_position);
-  }
-
-  const float RSPEED = this->legs_rotation_speed / static_cast<float>(this->ik_iterations);
-  const float E_LENGTH = 1.31f;
-  const float M_LENGTH = 1.04f;
-  const float B_LENGTH = 1.00f;
-  size_t iterations = this->ik_iterations;
-  while (iterations-- > 0)
-  {
-    // inverse
-    for (size_t i = 0; i < legs_b.size(); ++i)
-    {
-      glm::vec3 dir_e = glm::normalize(legs_e[i]->target_position - legs_e[i]->get_position());
-      dir_e *= legs_e[i]->rotation_scalar;
-      dir_e = glm::normalize(dir_e);
-      glm::vec3 leg_e_target_position = legs_e[i]->target_position - dir_e * E_LENGTH;
-      const float world_y = world.ground->get_y(leg_e_target_position.x, leg_e_target_position.z);
-      if (leg_e_target_position.y > world_y + 1.0f)
-        leg_e_target_position.y = world_y + 1.0;
-      legs_e[i]->set_position(leg_e_target_position);
-      legs_e[i]->set_rotation(rotate_lookat(
-        legs_e[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_e), RSPEED));
-
-      glm::vec3 dir_m = glm::normalize(legs_e[i]->get_position() - legs_m[i]->get_position());
-      dir_m *= legs_m[i]->rotation_scalar;
-      dir_m = glm::normalize(dir_m);
-      legs_m[i]->set_position(legs_e[i]->get_position() - dir_m * M_LENGTH);
-      legs_m[i]->set_rotation(rotate_lookat(
-        legs_m[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0f }, dir_m), RSPEED));
-
-      glm::vec3 dir_b = glm::normalize(legs_m[i]->get_position() - legs_b[i]->get_position());
-      dir_b *= legs_b[i]->rotation_scalar;
-      dir_b = glm::normalize(dir_b);
-      legs_b[i]->set_position(legs_m[i]->get_position() - dir_b * B_LENGTH);
-      auto b_quat = rotate_lookat(
-        legs_b[i]->get_rotation(), rotation_between_vectors(glm::vec3 { 1.0f, 0.0f, 0.0 }, dir_b), RSPEED);
-      legs_b[i]->set_rotation(b_quat);
-    }
-
-    // forward
-    for (size_t i = 0; i < legs_b.size(); ++i)
-    {
-      const glm::vec3 b_translate = position + rotation * glm::vec3 { 0.0f, -B_LENGTH, 0.0f };
-      legs_b[i]->set_position(b_translate);
-
-      const glm::vec3 m_translate = b_translate + legs_b[i]->get_rotation() * glm::vec3 { M_LENGTH, 0.0f, 0.0f };
-      legs_m[i]->set_position(m_translate);
-
-      const glm::vec3 e_translate = m_translate + legs_m[i]->get_rotation() * glm::vec3 { E_LENGTH, 0.0f, 0.0f };
-      legs_e[i]->set_position(e_translate);
-    }
-  }
+  const glm::vec3 normal = world.ground->get_n(position.x, position.z);
+  Debug::clear_lines("Mech Normal");
+  Debug::add_line("Mech Normal", position, position + normal * 30.0f);
+  auto rot_y = rotation_between_vectors(glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::normalize(normal));
+  body->set_position(position + glm::vec3 { 0.0f, 0.0f, 0.0f });
+  body->set_rotation(rot_y * rotation);
 }
 
-void Mech::render(ZD::View &view, [[maybe_unused]] const World &world)
+void Mech::calculate_legs([[maybe_unused]] const World &world)
+{
+  const float angle_step = 2.0f * M_PI / static_cast<float>(legs_b.size());
+  const auto leg_angle = [&angle_step, this](auto leg_n) -> float {
+    return static_cast<float>(leg_n) * angle_step + (angle_step / 2.0f) * angle_offset;
+  };
+
+  Debug::clear_cubes("Legs Target");
+  Debug::clear_cubes("Legs Current Target");
+
+  if (legs_e.size() <= 0)
+    return;
+
+  const auto normal = world.ground->get_n(position.x, position.z);
+  const glm::vec3 ground { position.x, world.ground->get_y(position.x, position.z), position.z };
+  const float L_LENGTH = legs_e[0]->length() + legs_m[0]->length() + legs_b[0]->length();
+
+  // set targets
+  for (size_t i = 0; i < legs_e.size(); ++i)
+  {
+    auto &le = legs_e[i];
+    [[maybe_unused]] auto &lm = legs_e[i];
+    [[maybe_unused]] auto &lb = legs_e[i];
+
+    const float angle = leg_angle(i);
+    const glm::quat rot = rotation * glm::angleAxis(angle, normal);
+    const auto leg_forward = rotation * (glm::vec3 { 0.0f, 0.0f, 1.0f + legs_next_step_distance } + move_vec);
+    const auto leg_spacing_vec = rot * glm::vec3 { legs_spacing, 0.0f, 0.0f };
+    auto target = position + leg_forward + leg_spacing_vec;
+
+    target.y = world.ground->get_y(target.x, target.z);
+
+    const auto ground_dir = glm::normalize(ground - target);
+    const auto range_dst = glm::distance(position, target) - L_LENGTH;
+
+    if (range_dst > -1.0f)
+    {
+      target += ground_dir * range_dst * 1.1f;
+      target.y = world.ground->get_y(target.x, target.z);
+    }
+
+    if (glm::distance(position, le->target_position) > L_LENGTH)
+    {
+      le->target_position = target;
+    } 
+    if (glm::distance(le->end(), target) >= legs_max_distance)
+    {
+      le->target_position = target;  
+    }
+
+    Debug::add_cube("Legs Target", target);
+    Debug::add_cube("Legs Current Target", le->target_position);
+  }
+  
+  const float RSPEED = this->legs_rotation_speed / static_cast<float>(this->ik_iterations);
+  glm::vec3 leg_center { 0.0f, 0.0f, 0.0f };
+  Debug::clear_cubes("legends");
+  // inverse kinematics
+  for (size_t i = 0; i < ik_iterations; ++i)
+  {
+    for (size_t l = 0; l < legs_e.size(); ++l)
+    {
+      auto &le = legs_e[l];
+      auto &lm = legs_m[l];
+      auto &lb = legs_b[l];
+
+
+      // inverse
+      const auto le_dir = glm::normalize(le->target_position - le->begin());      
+      le->set_rotation(rotate_lookat(le->get_rotation(), rotation_between_vectors(le->forward(), le_dir), RSPEED));
+      le->set_position(le->target_position);
+      le->ground_collision(*world.ground);
+      
+      const auto lm_dir = glm::normalize(le->begin() - lm->begin());      
+      lm->set_rotation(rotate_lookat(lm->get_rotation(), rotation_between_vectors(le->forward(), lm_dir), RSPEED));
+      lm->set_position(le->begin() - lm_dir * lm->length());
+      lm->ground_collision(*world.ground);
+      
+      const auto lb_dir = glm::normalize(lm->begin() - lb->begin());      
+      lb->set_rotation(rotate_lookat(lb->get_rotation(), rotation_between_vectors(le->forward(), lb_dir), RSPEED));
+      lb->set_position(lm->begin() - lb_dir * lb->length());
+      lb->ground_collision(*world.ground);
+      
+      
+      // forward
+      //lb->set_position(position + rotation * (lb->forward() * -lb->length()));
+      //lm->set_position(lb->begin() + lb->get_rotation() * lm->forward() * lm->length());
+      //le->set_position(lm->begin() + lm->get_rotation() * le->forward() * le->length());
+      lb->set_position(position);
+      lm->set_position(lb->end());
+      le->set_position(lm->end());
+
+      if (i == ik_iterations - 1)
+      {
+        Debug::add_cube("legends", lb->end());
+        Debug::add_cube("legends", lm->end());
+        Debug::add_cube("legends", le->end());
+        leg_center += le->end();
+      }
+    }
+  }
+
+  //position += (leg_center - position) / static_cast<float>(legs_e.size()) * 0.0001f;
+  //position.y += (leg_center.y / static_cast<float>(legs_e.size()) + height) * 0.0001f;
+}
+
+void Mech::draw(ZD::View &view, [[maybe_unused]] const World &world)
 {
   shader->use();
-  body->set_position(get_position());
-  body->set_rotation(get_rotation());
-  body->set_scale(get_scale());
   body->render(*shader, view);
 
   for (size_t i = 0; i < legs_b.size(); ++i)
