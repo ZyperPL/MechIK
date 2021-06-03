@@ -35,18 +35,18 @@
 
 inline glm::vec3 camera_forward(const glm::vec3 &position, const glm::vec3 &target)
 {
-  return glm::normalize(position - target);
+  return glm::normalize(target - position);
 }
 
 inline glm::vec3 camera_right(const glm::vec3 &position, const glm::vec3 &target)
 {
-  return glm::cross(camera_forward(position, target), glm::vec3(0.0, 1.0, 0.0));
+  return glm::cross(glm::vec3(0.0, 1.0, 0.0), camera_forward(position, target));
 }
 
 inline glm::vec3 camera_up(const glm::vec3 &position, const glm::vec3 &target)
 {
   const glm::vec3 f = camera_forward(position, target);
-  const glm::vec3 r = glm::cross(f, glm::vec3(0.0, 1.0, 0.0));
+  const glm::vec3 r = glm::cross(glm::vec3(0.0, 1.0, 0.0), f);
   return glm::cross(f, r);
 }
 
@@ -130,6 +130,9 @@ int main()
       }
   }
 
+  bool camera_noclip = false;
+  bool camera_follow = true;
+  float camera_target_distance = 20.0f;
   printf("Ready.\n");
   while (window->is_open())
   {
@@ -149,7 +152,6 @@ int main()
     }
     ImGui::End();
 
-    static bool camera_noclip = false;
     if (ImGui::Begin("World"))
     {
       if (ImGui::BeginTabBar("World", ImGuiTabBarFlags_None))
@@ -171,6 +173,7 @@ int main()
           }
 
           ImGui::Checkbox("Noclip", &camera_noclip);
+          ImGui::Checkbox("Follow target", &camera_follow);
           ImGui::EndTabItem();
         }
       }
@@ -210,9 +213,15 @@ int main()
       CAMERA_STEP_SIZE /= 10.0;
 
     if (window->input()->key(ZD::Key::W))
-      camera_position -= camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-    if (window->input()->key(ZD::Key::S))
+    {
       camera_position += camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_target_distance -= CAMERA_STEP_SIZE;
+    }
+    if (window->input()->key(ZD::Key::S))
+    {
+      camera_position -= camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+      camera_target_distance += CAMERA_STEP_SIZE;
+    }
     if (window->input()->key(ZD::Key::A))
       camera_position += camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
     if (window->input()->key(ZD::Key::D))
@@ -230,9 +239,18 @@ int main()
         camera_position.y = camera_min_y + 5.0f;
       }
     }
-
+    
     view.set_position(camera_position);
     view.set_target(world->mech->get_position());
+    
+    if (camera_follow)
+    {
+      const float dst_to_target = glm::distance(camera_position, view.get_target());
+      if (dst_to_target != camera_target_distance && dst_to_target > 10.0)
+      {
+        camera_position += camera_forward(view.get_position(), world->mech->get_position()) * (dst_to_target - camera_target_distance);
+      }
+    }
 
     sky.render(view);
 
