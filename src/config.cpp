@@ -37,7 +37,7 @@ Config::Config(const std::string file_name)
   };
 
   std::string key {}, value {};
-
+  
   world_config = std::make_shared<ConfigKeysValues>();
 
   auto add_key_value = [&section, this](const std::string key, const std::string value) {
