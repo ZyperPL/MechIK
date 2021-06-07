@@ -77,13 +77,13 @@ private:
   std::vector<std::unique_ptr<LegPart>> legs_e;
   std::vector<std::pair<int, int>> path;
 
-  float height { 2.0f };
+  float height { 1.5f };
   float move_speed { 0.1f };
   float rotation_speed { 0.2f };
   float angle_offset { 1.0f };
   float legs_rotation_speed { 0.08f };
   float legs_next_step_distance { 0.1f };
-  float legs_spacing { 3.1f };
+  float legs_spacing { 2.1f };
   float legs_max_distance { 2.6f };
   size_t ik_iterations { 20 };
 

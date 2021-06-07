@@ -23,8 +23,8 @@ Ground::Ground(const ConfigKeysValues &world_config)
 
   auto model = ZD::Model::create();
 
-  for (size_t i = 0; i < 200; i++)
-    for (size_t j = 0; j < 200; j++)
+  for (ssize_t i = 0; i < world_config.get_int("GroundW", 200); i++)
+    for (ssize_t j = 0; j < world_config.get_int("GroundH", 200); j++)
     {
       const float x = ((float)(i)-100.0f) * UNIT;
       const float z = ((float)(j)-100.0f) * UNIT;

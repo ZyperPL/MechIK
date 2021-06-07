@@ -1,3 +1,4 @@
+#include <chrono>
 #include <map>
 #include <unordered_set>
 #include <set>
@@ -90,6 +91,8 @@ int main()
   renderer.set_multisampling(1);
   auto window = renderer.add_window(ZD::WindowParameters(ZD::Size(WINDOW_WIDTH, WINDOW_HEIGHT), "Mech"));
   renderer.enable_blend();
+  renderer.enable_depth_test(GL_LEQUAL);
+  renderer.enable_cull_face();
 
   std::unique_ptr<World> world = std::make_unique<World>();
   renderer.clear_background_color(world->sky_color);
@@ -130,19 +133,145 @@ int main()
       }
   }
 
+  const double DELTA_TIME = 1.0 / 30.0;
+  auto last_time = std::chrono::steady_clock::now();
+  double accumulator = 0.0;
+
   bool camera_noclip = false;
   bool camera_follow = true;
   float camera_target_distance = 20.0f;
+
   printf("Ready.\n");
   while (window->is_open())
   {
+    auto now_time = std::chrono::steady_clock::now();
+    double time_difference = std::chrono::nanoseconds(now_time - last_time).count() / 1e9;
+    last_time = now_time;
+    accumulator += time_difference;
+
     renderer.clear();
     glClearColor(world->sky_color.red_float(), world->sky_color.green_float(), world->sky_color.blue_float(), 1.0);
-    renderer.enable_depth_test(GL_LEQUAL);
-    renderer.enable_cull_face();
-    renderer.update();
+
+    bool imgui_mouse = imgui_io.WantCaptureMouse;
+
+    while (accumulator >= DELTA_TIME)
+    {
+      renderer.update();
+      world->mech->update(*world);
+
+      float CAMERA_STEP_SIZE = 1.0;
+      if (window->input()->key(ZD::Key::LeftShift))
+        CAMERA_STEP_SIZE *= 10.0;
+      if (window->input()->key(ZD::Key::LeftControl))
+        CAMERA_STEP_SIZE /= 10.0;
+
+      if (window->input()->key(ZD::Key::W))
+      {
+        camera_position += camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+        camera_target_distance -= CAMERA_STEP_SIZE;
+      }
+      if (window->input()->key(ZD::Key::S))
+      {
+        camera_position -= camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+        camera_target_distance += CAMERA_STEP_SIZE;
+      }
+      if (window->input()->key(ZD::Key::A))
+        camera_position += camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+      if (window->input()->key(ZD::Key::D))
+        camera_position -= camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+      if (window->input()->key(ZD::Key::E))
+        camera_position += camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+      if (window->input()->key(ZD::Key::Q))
+        camera_position -= camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
+
+      if (!camera_noclip)
+      {
+        const double camera_min_y = world->ground->get_y(camera_position.x, camera_position.z);
+        if (camera_position.y - 5.0f < camera_min_y)
+        {
+          camera_position.y = camera_min_y + 5.0f;
+        }
+      }
+
+      view.set_position(camera_position);
+      view.set_target(world->mech->get_position());
+
+      if (camera_follow)
+      {
+        const float dst_to_target = glm::distance(camera_position, view.get_target());
+        if (dst_to_target != camera_target_distance && dst_to_target > 1.0)
+        {
+          camera_position +=
+            camera_forward(view.get_position(), world->mech->get_position()) * (dst_to_target - camera_target_distance);
+        }
+      }
+
+      if (!imgui_mouse)
+      {
+        if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
+        {
+          const auto mouse_position = window->input()->mouse().position();
+
+          const glm::vec3 click_world_space = glm::unProject(
+            glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 0.0f),
+            view.get_view_matrix(),
+            view.get_projection_matrix(),
+            glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
+
+          const glm::vec3 click_world_space_forward = glm::unProject(
+            glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 1.0f),
+            view.get_view_matrix(),
+            view.get_projection_matrix(),
+            glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
+
+          const glm::vec3 click_direction_world_space = glm::normalize(click_world_space_forward - click_world_space);
+
+          Debug::clear_cubes("Path");
+          glm::vec3 p = click_world_space;
+          const size_t MAX_RAY_STEPS = 1000;
+          const float RAY_STEP = 1.0f;
+          for (size_t i = 0; i < MAX_RAY_STEPS; i++)
+          {
+            p += click_direction_world_space * RAY_STEP;
+            const float click_y = world->ground->get_y(p.x, p.z);
+            if (p.y < click_y)
+            {
+              Debug::add_cube("Path", p);
+              Debug::add_cube("Path", glm::vec3(p.x, click_y, p.z));
+
+              const int end_x = p.x / world->X_SPACING;
+              const int end_y = p.z / world->Z_SPACING;
+              int start_x = world->mech->get_position().x / world->X_SPACING;
+              int start_y = world->mech->get_position().z / world->Z_SPACING;
+
+              size_t tries = 30;
+              while (tries > 0 && !world->grid_map->nodes.contains({ start_x, start_y }))
+              {
+                start_x = (start_x + 1);
+                start_y = (start_y + 1);
+                tries--;
+              }
+
+              auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
+              for (const auto &idx : path)
+              {
+                const float x = idx.first * world->X_SPACING;
+                const float z = idx.second * world->Z_SPACING;
+                const glm::vec3 pos { x, world->ground->get_y(x, z), z };
+                Debug::add_cube("Path", pos);
+              }
+              world->mech->set_path(std::move(path));
+
+              break;
+            }
+          }
+        }
+      }
+
+      accumulator -= DELTA_TIME;
+    }
+    
     imgui_frame();
-    world->mech->update(*world);
 
     if (ImGui::Begin("Debug options"))
     {
@@ -206,52 +335,6 @@ int main()
     }
     ImGui::End();
 
-    float CAMERA_STEP_SIZE = 1.0;
-    if (window->input()->key(ZD::Key::LeftShift))
-      CAMERA_STEP_SIZE *= 10.0;
-    if (window->input()->key(ZD::Key::LeftControl))
-      CAMERA_STEP_SIZE /= 10.0;
-
-    if (window->input()->key(ZD::Key::W))
-    {
-      camera_position += camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-      camera_target_distance -= CAMERA_STEP_SIZE;
-    }
-    if (window->input()->key(ZD::Key::S))
-    {
-      camera_position -= camera_forward(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-      camera_target_distance += CAMERA_STEP_SIZE;
-    }
-    if (window->input()->key(ZD::Key::A))
-      camera_position += camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-    if (window->input()->key(ZD::Key::D))
-      camera_position -= camera_right(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-    if (window->input()->key(ZD::Key::E))
-      camera_position += camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-    if (window->input()->key(ZD::Key::Q))
-      camera_position -= camera_up(view.get_position(), world->mech->get_position()) * CAMERA_STEP_SIZE;
-
-    if (!camera_noclip)
-    {
-      const double camera_min_y = world->ground->get_y(camera_position.x, camera_position.z);
-      if (camera_position.y - 5.0f < camera_min_y)
-      {
-        camera_position.y = camera_min_y + 5.0f;
-      }
-    }
-    
-    view.set_position(camera_position);
-    view.set_target(world->mech->get_position());
-    
-    if (camera_follow)
-    {
-      const float dst_to_target = glm::distance(camera_position, view.get_target());
-      if (dst_to_target != camera_target_distance && dst_to_target > 1.0)
-      {
-        camera_position += camera_forward(view.get_position(), world->mech->get_position()) * (dst_to_target - camera_target_distance);
-      }
-    }
-
     sky.render(view);
 
     world->mech->draw(view, *world);
@@ -267,68 +350,6 @@ int main()
       // transparent
       if (prop->has_transulency)
         prop->draw(view, *world);
-    }
-
-    if (!imgui_io.WantCaptureMouse)
-    {
-      if (window->input()->mouse().consume_button(ZD::MouseButton::Left))
-      {
-        const auto mouse_position = window->input()->mouse().position();
-
-        const glm::vec3 click_world_space = glm::unProject(
-          glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 0.0f),
-          view.get_view_matrix(),
-          view.get_projection_matrix(),
-          glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
-
-        const glm::vec3 click_world_space_forward = glm::unProject(
-          glm::vec3(mouse_position.x, window->get_height() - mouse_position.y, 1.0f),
-          view.get_view_matrix(),
-          view.get_projection_matrix(),
-          glm::vec4(0.0f, 0.0f, window->get_width(), window->get_height()));
-
-        const glm::vec3 click_direction_world_space = glm::normalize(click_world_space_forward - click_world_space);
-
-        Debug::clear_cubes("Path");
-        glm::vec3 p = click_world_space;
-        const size_t MAX_RAY_STEPS = 1000;
-        const float RAY_STEP = 1.0f;
-        for (size_t i = 0; i < MAX_RAY_STEPS; i++)
-        {
-          p += click_direction_world_space * RAY_STEP;
-          const float click_y = world->ground->get_y(p.x, p.z);
-          if (p.y < click_y)
-          {
-            Debug::add_cube("Path", p);
-            Debug::add_cube("Path", glm::vec3(p.x, click_y, p.z));
-
-            const int end_x = p.x / world->X_SPACING;
-            const int end_y = p.z / world->Z_SPACING;
-            int start_x = world->mech->get_position().x / world->X_SPACING;
-            int start_y = world->mech->get_position().z / world->Z_SPACING;
-
-            size_t tries = 30;
-            while (tries > 0 && !world->grid_map->nodes.contains({ start_x, start_y }))
-            {
-              start_x = (start_x + 1);
-              start_y = (start_y + 1);
-              tries--;
-            }
-
-            auto path = world->grid_map->get_path(end_x, end_y, start_x, start_y);
-            for (const auto &idx : path)
-            {
-              const float x = idx.first * world->X_SPACING;
-              const float z = idx.second * world->Z_SPACING;
-              const glm::vec3 pos { x, world->ground->get_y(x, z), z };
-              Debug::add_cube("Path", pos);
-            }
-            world->mech->set_path(std::move(path));
-
-            break;
-          }
-        }
-      }
     }
 
     Debug::draw_lines(view);

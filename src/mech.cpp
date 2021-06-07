@@ -90,12 +90,20 @@ LegPart::LegPart(const size_t part_index)
 
 void LegPart::ground_collision(Ground &ground)
 {
-  const auto e = end();
-  const float gye = ground.get_y(e.x, e.z);
+  auto e = end();
+  float gye = ground.get_y(e.x, e.z);
+
+  if (e.y < gye)
+  {
+    position.y += gye - e.y;
+  }
+  
+  e = end();
+  gye = ground.get_y(e.x, e.z);
   if (e.y - 0.5f < gye)
   {
     const float dst = glm::distance({ e.x, gye, e.z }, e);
-    position -= rotation * forward() * dst;
+    position -= rotation * forward() * (dst + 0.1f);
   }
 
   const float gy = ground.get_y(position.x, position.z);
@@ -253,9 +261,9 @@ void Mech::calculate_legs([[maybe_unused]] const World &world)
     if (range_dst > 1000.0)
       continue;
 
-    if (range_dst > -1.0f)
+    if (range_dst > 0.0f)
     {
-      target += ground_dir * range_dst * 1.1f;
+      target += ground_dir * (0.7f + glm::abs(range_dst));
       target.y = world.ground->get_y(target.x, target.z);
     }
 
@@ -333,7 +341,7 @@ void Mech::calculate_legs([[maybe_unused]] const World &world)
   }
 
   //position += (leg_center - position) / static_cast<float>(legs_e.size()) * 0.0001f;
-  //position.y += (leg_center.y / static_cast<float>(legs_e.size()) + height) * 0.0001f;
+  position.y += (position.y - (leg_center.y / static_cast<float>(legs_e.size()) + height)) * 0.4f;
 }
 
 void Mech::draw(ZD::View &view, [[maybe_unused]] const World &world)
