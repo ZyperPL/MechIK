@@ -294,6 +294,7 @@ void Mech::calculate_legs([[maybe_unused]] const World &world)
       // inverse
       if (glm::distance(le->target_position, le->begin()) > 1e-2)
       {
+        // TODO: refactor into single method
         auto le_dir = glm::normalize(le->target_position - le->begin());
         le_dir = glm::normalize(le_dir * le->rotation_scalar);
         if (!glm::isnan(le_dir).x)

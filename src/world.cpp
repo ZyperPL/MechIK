@@ -28,6 +28,7 @@ void World::generate(const Config &config)
 
   const float normal_factor = config.get_world_config()->get_float("NormalCostFactor", 3.0f);
 
+  // for each position on the map
   for (ssize_t i = MIN_X; i < MAX_X; i++)
   {
     for (ssize_t j = MIN_Z; j < MAX_Z; j++)
@@ -37,8 +38,10 @@ void World::generate(const Config &config)
       pos.z += j * Z_SPACING + (random(rd) - 0.5) * Z_SPACING / 2.0f;
       pos.y = ground->get_y(pos.x, pos.z);
 
+      // create new empty node at position
       auto &map_node = grid_map->add(static_cast<int>(i), static_cast<int>(j));
 
+      // calculate normal vector at the position
       auto n = ground->get_n(pos.x, pos.z);
       std::shared_ptr<Prop> added_prop;
 
@@ -46,6 +49,7 @@ void World::generate(const Config &config)
         i % PROP_X_SPACING == 0 && j % PROP_Z_SPACING == 0 && random(rd) > (1.0 - PROP_PROBABILITY) &&
         glm::distance(mech->get_position(), pos) > 5.0f)
       {
+        // copy random prop available at the position
         added_prop = prop_builder.copy_at_position(pos);
         if (!added_prop)
         {
@@ -62,6 +66,7 @@ void World::generate(const Config &config)
         props.push_back(added_prop);
       }
 
+      // calculate node cost
       map_node.cost = GridMap::Node::calculate_cost(n, normal_factor, added_prop);
     }
   }
